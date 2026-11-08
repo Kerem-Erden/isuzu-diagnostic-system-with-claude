@@ -20,5 +20,5 @@ Model/effort suggestions follow the policy in the master brief (§20).
 | W14 | Live-data reference warnings (hysteresis), deferred from old MVP | P3 | W7 | L | unit tests | — | Sonnet Medium |
 | W15 | Firmware bench self-test mode (TWAI internal loopback, CTX/CRX level check; transceiver off any bus) | P1 | W4 | M | bench run recorded | bench only, vehicle disconnected | Opus High |
 | W16 | Firmware passive monitor (listen-only per-ID counters, bounded) + desktop view | P1 | W4 | M | bench with second node, then passive vehicle run | listen-only; **user permission** for vehicle | Opus High |
-| W17 | Developer-log export (CSV/JSON) + single READ_PID control on the Developer page | P1 | W8 | L | Qt tests | — | Sonnet Medium |
+| W17 ✅ done 2026-11-08 | Developer-log export (CSV/JSON) + single READ_PID control on the Developer page | P1 | W8 | L | Qt tests | — | Sonnet Medium |
 | W18 ✅ done 2026-11-08 (run 42478500299 green) | Push + first CI run (host sanitizers, Qt 6.8.3 desktop, ESP-IDF 6.0.2 firmware) | P1 | — | L | green CI | **push only with user approval** | Sonnet Medium |

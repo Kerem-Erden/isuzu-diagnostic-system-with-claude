@@ -32,7 +32,7 @@ _As of 2026-11-08._
 
 ## Desktop
 
-* Developer log cannot be exported yet (W17); it is bounded to 2000 entries.
+* Developer log is bounded to 2000 entries; CSV export writes what is in the buffer and states how many older entries were dropped.
 * Audit history stores DTC scans and sessions, not live-data samples or every protocol error.
 * Deleting a `SerialTransport` whose worker is stuck in the driver blocks the UI for up to 2 s.
 * UI text is English; learning documents are Turkish.

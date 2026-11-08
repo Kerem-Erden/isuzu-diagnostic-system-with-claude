@@ -24,6 +24,20 @@ private slots:
         QCOMPARE(log.index(2, EventLogModel::Text).data().toString(), QStringLiteral("4"));
     }
 
+    void eventLogExportsQuotedCsv() {
+        EventLogModel log(2);
+        log.append(QStringLiteral("CAN"), QStringLiteral("CAN_RX"), QStringLiteral("id=7E8 data=0441"));
+        log.append(QStringLiteral("REQUEST"), QStringLiteral("READ_PID"), QStringLiteral("say \"hi\", ok"));
+        log.append(QStringLiteral("EVENT"), QStringLiteral("DIAG"), QStringLiteral("live stopped"));  // drops the first
+        const QStringList lines = log.toCsv({QStringLiteral("source=SIMULATION")}).split(QLatin1Char('\n'), Qt::SkipEmptyParts);
+        QCOMPARE(lines.size(), 5);
+        QCOMPARE(lines[0], QStringLiteral("# source=SIMULATION"));
+        QVERIFY(lines[1].startsWith(QStringLiteral("# 1 older entries were dropped")));
+        QCOMPARE(lines[2], QStringLiteral("time,category,kind,details"));
+        QVERIFY(lines[3].endsWith(QStringLiteral(",\"REQUEST\",\"READ_PID\",\"say \"\"hi\"\", ok\"")));
+        QVERIFY(lines[3].startsWith(QStringLiteral("\"20")));  // ISO 8601 date
+    }
+
     void eventFilterByCategoryAndText() {
         EventLogModel log;
         log.append(QStringLiteral("CAN"), QStringLiteral("CAN_RX"), QStringLiteral("id=7E8 data=0441"));

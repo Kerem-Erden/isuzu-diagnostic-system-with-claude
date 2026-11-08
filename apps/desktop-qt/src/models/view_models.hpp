@@ -75,6 +75,12 @@ public:
 
     void append(const QString& category, const QString& kind, const QString& text);
     void clear();
+    /**
+     * @brief Writes every buffered entry as CSV (RFC 4180 quoting, UTF-8) for validation records.
+     * @param header free-text lines written first as `# ...` comments (identity, build, …).
+     * The time column is ISO 8601 with milliseconds so traces can be correlated across tools.
+     */
+    QString toCsv(const QStringList& header) const;
     int capacity() const { return capacity_; }
     /// Entries dropped because the buffer was full (shown so truncation is never silent).
     quint64 dropped() const { return dropped_; }

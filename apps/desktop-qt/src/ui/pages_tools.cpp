@@ -1,6 +1,10 @@
 // DeveloperPage and SettingsPage.
 #include <QCheckBox>
 #include <QComboBox>
+#include <QDateTime>
+#include <QFile>
+#include <QFileDialog>
+#include <QMessageBox>
 #include <QFormLayout>
 #include <QFrame>
 #include <QHBoxLayout>
@@ -14,6 +18,7 @@
 #include <QVBoxLayout>
 
 #include "data/audit_store.hpp"
+#include "diag/obd.hpp"
 #include "gateway/gateway_client.hpp"
 #include "knowledge/knowledge_repository.hpp"
 #include "models/view_models.hpp"
@@ -33,7 +38,9 @@ DeveloperPage::DeveloperPage(AppContext& context, QWidget* parent)
       text_(new QLineEdit),
       trace_(new QCheckBox(tr("CAN trace"))),
       counters_(new QLabel),
-      table_(new QTableView) {
+      table_(new QTableView),
+      singlePid_(new QComboBox),
+      singleRead_(new QPushButton(tr("Send once"))) {
     filter_->setSourceModel(context_.log);
     category_->addItem(tr("All categories"), QString());
     for (const char* name : {"CONNECTION", "PROTOCOL", "REQUEST", "EVENT", "CAN", "SCAN", "LIVE"}) {
@@ -43,13 +50,31 @@ DeveloperPage::DeveloperPage(AppContext& context, QWidget* parent)
     auto* statusButton = new QPushButton(tr("Query STATUS"));
     auto* clearButton = new QPushButton(tr("Clear"));
 
+    auto* exportButton = new QPushButton(tr("Export CSV…"));
+
     auto* row = new QHBoxLayout;
     row->addWidget(category_);
     row->addWidget(text_, 1);
     row->addWidget(trace_);
     row->addWidget(statusButton);
+    row->addWidget(exportButton);
     row->addWidget(clearButton);
     content_->addLayout(row);
+
+    // Exactly one Mode 01 request without starting live polling (vehicle-validation-plan.md §4).
+    // The gateway de-duplicates request ids and never retries, so one click = one CAN request.
+    std::size_t pidCount = 0;
+    const diag::obd::PidDefinition* pids = diag::obd::livePids(pidCount);
+    for (std::size_t i = 0; i < pidCount; ++i) {
+        singlePid_->addItem(QStringLiteral("0x%1 %2").arg(pids[i].pid, 2, 16, QLatin1Char('0')).arg(QLatin1String(pids[i].name)),
+                            QStringLiteral("%1").arg(pids[i].pid, 2, 16, QLatin1Char('0')).toUpper());
+    }
+    auto* single = new QHBoxLayout;
+    single->addWidget(new QLabel(tr("Single Mode 01 request:")));
+    single->addWidget(singlePid_);
+    single->addWidget(singleRead_);
+    single->addStretch();
+    content_->addLayout(single);
     content_->addWidget(counters_);
 
     table_->setModel(filter_);
@@ -69,6 +94,9 @@ DeveloperPage::DeveloperPage(AppContext& context, QWidget* parent)
             [this](bool on) { context_.client->send(QStringLiteral("TRACE"), {on ? QStringLiteral("1") : QStringLiteral("0")}); });
     connect(statusButton, &QPushButton::clicked, this, [this] { context_.client->send(QStringLiteral("STATUS")); });
     connect(clearButton, &QPushButton::clicked, context_.log, &EventLogModel::clear);
+    connect(singleRead_, &QPushButton::clicked, this,
+            [this] { context_.client->send(QStringLiteral("READ_PID"), {singlePid_->currentData().toString()}); });
+    connect(exportButton, &QPushButton::clicked, this, &DeveloperPage::exportCsv);
     connect(context_.log, &QAbstractItemModel::rowsInserted, this, [this] {
         updateCounters();
         if (table_->isVisible()) table_->scrollToBottom();
@@ -76,6 +104,7 @@ DeveloperPage::DeveloperPage(AppContext& context, QWidget* parent)
     connect(context_.client, &GatewayClient::stateChanged, this, [this](GatewayClient::State state) {
         const bool ready = state == GatewayClient::State::Ready;
         trace_->setEnabled(ready);
+        singleRead_->setEnabled(ready);
         if (!ready) {
             QSignalBlocker block(trace_);  // the gateway forgets TRACE on reboot/reconnect
             trace_->setChecked(false);
@@ -83,7 +112,32 @@ DeveloperPage::DeveloperPage(AppContext& context, QWidget* parent)
         updateCounters();
     });
     trace_->setEnabled(false);
+    singleRead_->setEnabled(false);
     updateCounters();
+}
+
+void DeveloperPage::exportCsv() {
+    const QString path = QFileDialog::getSaveFileName(
+        this, tr("Export developer log"),
+        QStringLiteral("isuzu-trace-%1.csv").arg(QDateTime::currentDateTime().toString(QStringLiteral("yyyyMMdd-HHmmss"))),
+        tr("CSV files (*.csv)"));
+    if (path.isEmpty()) return;
+    // The header makes the file self-describing evidence (who answered, which build, which link).
+    const GatewayIdentity& id = context_.client->identity();
+    const QStringList header = {
+        QStringLiteral("Isuzu Diagnostic System developer log, exported %1").arg(QDateTime::currentDateTime().toString(Qt::ISODate)),
+        QStringLiteral("link=%1 state=%2").arg(context_.client->transport()->description())
+            .arg(context_.client->state() == GatewayClient::State::Ready ? QStringLiteral("ready") : QStringLiteral("not connected")),
+        QStringLiteral("source=%1 fw=%2 build=%3 proto=%4 bitrate=%5 tx=%6 rx=%7")
+            .arg(id.source, id.firmwareVersion, id.buildId).arg(id.protocolVersion).arg(id.bitrate).arg(id.requestId, id.responseId),
+    };
+    QFile file(path);
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Truncate | QIODevice::Text) ||
+        file.write(context_.log->toCsv(header).toUtf8()) < 0) {
+        QMessageBox::warning(this, tr("Export failed"), tr("Could not write %1: %2").arg(path, file.errorString()));
+        return;
+    }
+    context_.log->append(QStringLiteral("CONNECTION"), QStringLiteral("EXPORT"), tr("log exported to %1").arg(path));
 }
 
 void DeveloperPage::updateCounters() {

@@ -169,6 +169,20 @@ void EventLogModel::clear() {
     endResetModel();
 }
 
+QString EventLogModel::toCsv(const QStringList& header) const {
+    // RFC 4180: quote every field, double embedded quotes. Newlines inside a field stay quoted.
+    const auto quote = [](QString field) { return QLatin1Char('"') + field.replace(QLatin1Char('"'), QStringLiteral("\"\"")) + QLatin1Char('"'); };
+    QString csv;
+    for (const QString& line : header) csv += QStringLiteral("# %1\n").arg(line);
+    if (dropped_ > 0) csv += QStringLiteral("# %1 older entries were dropped (buffer capacity %2)\n").arg(dropped_).arg(capacity_);
+    csv += QStringLiteral("time,category,kind,details\n");
+    for (const LogEntry& e : entries_) {
+        csv += quote(e.time.toString(Qt::ISODateWithMs)) + QLatin1Char(',') + quote(e.category) + QLatin1Char(',') +
+               quote(e.kind) + QLatin1Char(',') + quote(e.text) + QLatin1Char('\n');
+    }
+    return csv;
+}
+
 QStringList EventLogModel::categories() const {
     QStringList result;
     for (const LogEntry& e : entries_) {

@@ -118,6 +118,8 @@ flowchart LR
 * Araç/motor profili yalnızca bilgi tabanındaki uygulamayı seçer. CAN adreslemesi firmware'de sabittir;
   bu, Bağlantı ekranında açıkça yazar (R-19).
 * Geliştirici ekranındaki günlük 2000 kayıtla sınırlıdır; eski kayıtlar düşerken sayılır.
+* **Export CSV…** günlüğü, başında gateway kimliği (kaynak, firmware, build, bitrate, ID'ler) olan bir CSV'ye
+  yazar: araç doğrulama kaydı için ham kanıt. **Send once** tek bir Mode 01 isteği gönderir (canlı polling yok).
 * `--screenshots <klasör>`: yalnızca simülasyona bağlanır, her ekranın PNG görüntüsünü kaydeder (görsel inceleme).
 
 ## 5. Neden her şey sinyal?

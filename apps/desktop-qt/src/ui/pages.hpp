@@ -148,6 +148,7 @@ public:
 
 private:
     void updateCounters();
+    void exportCsv();
 
     AppContext& context_;
     EventFilterModel* filter_;
@@ -156,6 +157,8 @@ private:
     QCheckBox* trace_;
     QLabel* counters_;
     QTableView* table_;
+    QComboBox* singlePid_;
+    QPushButton* singleRead_;
 };
 
 class SettingsPage final : public Page {

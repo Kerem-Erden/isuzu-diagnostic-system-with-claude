@@ -29,7 +29,7 @@ The current firmware cannot yet support every step. These are prerequisites, tra
 |---|---|---|
 | W15 Bench self-test mode (TWAI internal loopback + CTX/CRX level check, transceiver disconnected from any bus) | Distinguishes controller, wiring and transceiver faults; the reference system's CRX stayed `1→1→1` | not implemented |
 | W16 Passive monitor (listen-only, per-ID frame counters and DLC, bounded) | Proves the RX path and the bitrate on the real bus without transmitting | not implemented (TRACE only shows the configured responder ID) |
-| W17 Developer-log export (CSV/JSON with timestamps) and a single-request control (one `READ_PID <pid>` without starting live polling) on the Developer page | Raw TX/RX evidence; §4 needs exactly one Mode 01 request – today only cyclic live data can send Mode 01 from the UI | not implemented |
+| W17 Developer-log export (CSV/JSON with timestamps) and a single-request control (one `READ_PID <pid>` without starting live polling) on the Developer page | Raw TX/RX evidence; §4 needs exactly one Mode 01 request | **implemented 2026-11-08** (Developer page: "Send once", "Export CSV…") |
 
 ## 2. Bench checks (vehicle NOT connected)
 
