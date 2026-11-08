@@ -57,7 +57,7 @@ Rules: `diagnostic-core` depends on nothing but the C++17 standard library
 | `libs/serial-protocol` | 1 ✅ | `serial-protocol.md` |
 | `libs/gateway-core` | 2 ✅ (host) | `firmware-guide-tr.md` |
 | `firmware/esp32-gateway` | 2 | `firmware-guide-tr.md` |
-| `apps/desktop-qt` | 3–4 | `desktop-guide-tr.md` |
+| `apps/desktop-qt` | 3 🟡 (skeleton) | `desktop-guide-tr.md` |
 | `libs/dtc-knowledge` | 3 | `dtc-database.md` |
 
 ## 4. Mode 03 end-to-end sequence

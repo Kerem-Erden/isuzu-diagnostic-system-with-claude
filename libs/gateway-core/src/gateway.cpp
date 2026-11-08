@@ -53,7 +53,7 @@ Gateway::Gateway(const GatewayConfig& config, CanPort& can, SerialSink& serial) 
 
 // ------------------------------------------------------------------ I/O helpers
 
-void Gateway::emit(std::string_view frame) noexcept {
+void Gateway::sendFrame(std::string_view frame) noexcept {
     // An empty view means the writer refused the frame (overflow / invalid char). Sending nothing
     // is safer than sending a truncated frame; count it so the bug is visible in STATUS.
     if (frame.empty()) {
@@ -79,15 +79,15 @@ void Gateway::traceFrame(const char* kind, const diag::CanFrame& frame) noexcept
     }
     beginEvent(kind).keyHex("id", frame.id, 3).keyValue("dlc", frame.dlc);
     if (frame.dlc > 0) writer_.keyValue("data", std::string_view(data, 2u * frame.dlc));
-    emit(writer_.keyValue("t", usToMs(frame.timestampUs)).finish());
+    sendFrame(writer_.keyValue("t", usToMs(frame.timestampUs)).finish());
 }
 
 void Gateway::sendError(std::uint32_t id, const diag::Error& error) noexcept {
-    emit(proto::beginError(writer_, id, error).finish());
+    sendFrame(proto::beginError(writer_, id, error).finish());
 }
 
 void Gateway::sendOkSimple(std::uint32_t id, std::string_view key, std::uint32_t value) noexcept {
-    emit(proto::beginOk(writer_, id).keyValue(key, value).finish());
+    sendFrame(proto::beginOk(writer_, id).keyValue(key, value).finish());
 }
 
 // ------------------------------------------------------------------ lifecycle
@@ -97,7 +97,7 @@ void Gateway::start(std::uint64_t nowUs) noexcept {
     // Boot in listen-only: nothing is transmitted until a desktop asks for data (ADR-009).
     can_.setTransmitEnabled(false);
     transmitEnabled_ = false;
-    emit(beginEvent("BOOT")
+    sendFrame(beginEvent("BOOT")
              .keyValue("proto", proto::kProtocolVersion)
              .keyValue("source", toString(config_.source))
              .finish());
@@ -144,14 +144,14 @@ void Gateway::poll(std::uint64_t nowUs) noexcept {
 }
 
 void Gateway::reportDiagnostic(std::string_view category, std::string_view key, std::string_view value) noexcept {
-    emit(beginEvent("DIAG").field(category).keyValue(key, value).finish());
+    sendFrame(beginEvent("DIAG").field(category).keyValue(key, value).finish());
 }
 
 void Gateway::endSession() noexcept {
     sessionActive_ = false;
     if (liveActive_) stopLive("session_timeout");
     queued_ = PendingRequest{};
-    emit(beginEvent("DIAG").field("session").keyValue("state", "ENDED").finish());
+    sendFrame(beginEvent("DIAG").field("session").keyValue("state", "ENDED").finish());
 }
 
 void Gateway::updateTransmitState() noexcept {
@@ -172,7 +172,7 @@ void Gateway::handleBody(std::string_view body, std::uint64_t nowUs) noexcept {
         // Without a valid id we cannot answer; report through an event instead.
         ++counters_.badFrames;
         const diag::Error error = parsed.ok() ? diag::fail(Stage::Protocol, Code::InvalidState) : parsed.error();
-        emit(beginEvent("DIAG")
+        sendFrame(beginEvent("DIAG")
                  .field("protocol")
                  .keyValue("error", diag::toString(error.code))
                  .finish());
@@ -205,7 +205,7 @@ void Gateway::handleRequest(const proto::Message& request, std::uint64_t nowUs) 
         return;
     }
     if (command == "PING") {
-        emit(proto::beginOk(writer_, id).field("pong").finish());
+        sendFrame(proto::beginOk(writer_, id).field("pong").finish());
         return;
     }
     if (command == "STATUS") {
@@ -292,7 +292,7 @@ void Gateway::submitUser(const PendingRequest& request, std::uint64_t nowUs) noe
 }
 
 void Gateway::sendHello(std::uint32_t id) noexcept {
-    emit(proto::beginOk(writer_, id)
+    sendFrame(proto::beginOk(writer_, id)
              .keyValue("proto", proto::kProtocolVersion)
              .keyValue("fw", config_.firmwareVersion)
              .keyValue("build", config_.buildId)
@@ -308,7 +308,7 @@ void Gateway::sendHello(std::uint32_t id) noexcept {
 
 void Gateway::sendStatus(std::uint32_t id) noexcept {
     const BusStatus bus = can_.status();
-    emit(proto::beginOk(writer_, id)
+    sendFrame(proto::beginOk(writer_, id)
              .keyValue("bus", toString(bus.state))
              .keyValue("tec", bus.tec)
              .keyValue("rec", bus.rec)
@@ -346,7 +346,7 @@ void Gateway::startTransaction(const PendingRequest& request, std::uint64_t nowU
         const diag::Error error = diag::fail(Stage::CanBus, Code::BusOff, bus.tec);
         if (request.kind == Kind::LivePid) {
             beginEvent("LIVE_ERR").field(livePid(liveIndex_).name);
-            emit(proto::appendError(writer_, error).finish());
+            sendFrame(proto::appendError(writer_, error).finish());
             stopLive("bus_off");
         } else {
             sendError(request.id, error);
@@ -393,11 +393,11 @@ void Gateway::finishLive(std::uint64_t nowUs) noexcept {
     }
     if (error.isOk()) {
         liveFailures_ = 0;
-        emit(beginEvent("LIVE").field(pid.name).fixed2(value).field(pid.unit).keyValue("t", usToMs(nowUs)).finish());
+        sendFrame(beginEvent("LIVE").field(pid.name).fixed2(value).field(pid.unit).keyValue("t", usToMs(nowUs)).finish());
         return;
     }
     beginEvent("LIVE_ERR").field(pid.name);
-    emit(proto::appendError(writer_, error).finish());
+    sendFrame(proto::appendError(writer_, error).finish());
     if (isPermanentlyUnsupported(error)) liveUnsupported_[index] = true;
     if (isSilenceFailure(error) && ++liveFailures_ >= config_.maxConsecutiveLiveFailures) {
         stopLive("no_response");
@@ -415,7 +415,7 @@ void Gateway::finishUserPid() noexcept {
         return;
     }
     const diag::obd::PidDefinition* pid = diag::obd::findPid(active_.pid);  // validated on submit
-    emit(proto::beginOk(writer_, active_.id)
+    sendFrame(proto::beginOk(writer_, active_.id)
              .keyHex("pid", active_.pid, 2)
              .keyValue("name", pid->name)
              .keyFixed2("value", decoded.value())
@@ -446,7 +446,7 @@ void Gateway::finishUserDtc() noexcept {
                 if (i != start) writer_.append(",");
                 writer_.append(text);
             }
-            emit(writer_.finish());
+            sendFrame(writer_.finish());
             ++parts;
         }
     }
@@ -462,7 +462,7 @@ void Gateway::finishUserDtc() noexcept {
     } else {
         writer_.keyValue("parts", parts);
     }
-    emit(writer_.keyHex("ecu", config_.isotp.rxId, 3).finish());
+    sendFrame(writer_.keyHex("ecu", config_.isotp.rxId, 3).finish());
 }
 
 // ------------------------------------------------------------------ live scheduling
@@ -483,7 +483,7 @@ void Gateway::scheduleLive(std::uint64_t nowUs) noexcept {
 
 void Gateway::stopLive(const char* reason) noexcept {
     liveActive_ = false;
-    emit(beginEvent("DIAG").field("live").keyValue("state", "STOPPED").keyValue("reason", reason).finish());
+    sendFrame(beginEvent("DIAG").field("live").keyValue("state", "STOPPED").keyValue("reason", reason).finish());
 }
 
 }  // namespace gw

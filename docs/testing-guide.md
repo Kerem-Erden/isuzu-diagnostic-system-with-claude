@@ -54,6 +54,11 @@ On this Windows machine the host toolchain is Qt's MinGW: put
 
 `gateway_tests` carries the `simulation` label: these results are simulation evidence only.
 
+## Desktop (Qt Test)
+
+`tests/unit/desktop/test_gateway_client.cpp` – 11 cases, GatewayClient over SimulationTransport
+(real gateway-core + SimulatedEcu). Labels `unit;desktop;simulation`. Requires the `windows-debug` preset.
+
 ## Known gaps
 
 * Sanitizers (ASan/UBSan) are not available with MinGW; CI runs the host tests on Linux GCC

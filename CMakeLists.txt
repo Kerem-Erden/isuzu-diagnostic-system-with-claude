@@ -20,7 +20,12 @@ add_subdirectory(libs/diagnostic-core)
 add_subdirectory(libs/serial-protocol)
 add_subdirectory(libs/gateway-core)
 
+# enable_testing() must precede every directory that calls add_test().
 if(ISUZU_BUILD_TESTS)
     enable_testing()
     add_subdirectory(tests)
+endif()
+
+if(ISUZU_BUILD_DESKTOP)
+    add_subdirectory(apps/desktop-qt)
 endif()

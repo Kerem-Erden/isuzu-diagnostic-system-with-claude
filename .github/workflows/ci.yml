@@ -29,6 +29,26 @@ jobs:
       - name: Test
         run: ctest --preset host-debug
 
+  desktop:
+    name: Desktop build + Qt tests (Windows, MinGW)
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@v4
+      - uses: jurplel/install-qt-action@v4
+        with:
+          version: 6.8.3
+          arch: win64_mingw
+          tools: tools_mingw1310 tools_ninja
+          cache: true
+      - name: Configure, build, test
+        shell: pwsh
+        run: |
+          $env:QT_ROOT = $env:QT_ROOT_DIR
+          $env:PATH = "$env:IQTA_TOOLS\mingw1310_64\bin;$env:IQTA_TOOLS\Ninja;$env:PATH"
+          cmake --preset windows-debug
+          cmake --build --preset windows-debug
+          ctest --preset windows-debug
+
   firmware:
     name: Firmware build (ESP-IDF 6.0.2, ${{ matrix.profile }})
     runs-on: ubuntu-24.04

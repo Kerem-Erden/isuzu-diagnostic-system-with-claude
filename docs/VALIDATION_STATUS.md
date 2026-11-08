@@ -22,6 +22,9 @@ Nothing in this repository is vehicle-validated. Every feature below is at most
 | Firmware ESP-IDF project builds (simulation + vehicle profiles) | AUTO (build only) | ESP-IDF **v6.1** on Windows, 2026-11-08: both profiles `Project build complete`, 0 warnings; sim bin 0x2EA00, vehicle bin 0x34340 bytes |
 | Firmware builds with the target ESP-IDF 6.0.2 | ASSUMED | CI job defined, not run yet (nothing pushed) |
 | Firmware runs on an ESP32 | ASSUMED | not flashed |
+| Desktop GatewayClient: HELLO identity, correlation, DTC part merge, NRC, desktop timeout, unplug, async failure when disconnected, noise/unknown id, keep-alive, reboot re-handshake, live events | AUTO + SIM | `ctest --preset windows-debug` → 4/4 (desktop_tests 11 cases pass), Qt 6.11.1 MinGW, 2026-11-08 |
+| Desktop app starts | MANUAL smoke | `isuzu_diagnostic.exe` with `QT_QPA_PLATFORM=offscreen` still running after 3 s; no UI interaction verified |
+| Desktop over a real serial port | ASSUMED | `SerialTransport` not written (Qt Serial Port missing) |
 | TwaiAdapter listen-only boot, TX slot lifetime, ISR → queue | ASSUMED | design reviewed only; requires ESP32 bench test |
 
 ## Inherited facts from the reference system (not re-verified here)

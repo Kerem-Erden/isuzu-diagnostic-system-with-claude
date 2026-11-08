@@ -3,8 +3,8 @@
 _Last updated: 2026-11-08_
 
 ## Current phase
-Phase 2 (ESP32 firmware): both profiles build with local ESP-IDF v6.1 (0 warnings). Not flashed.
-Target-version (6.0.2) build pending in CI.
+Phase 3 (desktop infrastructure) started: transport abstraction, SimulationTransport, GatewayClient and
+a skeleton window work and are tested. Firmware (Phase 2) builds with ESP-IDF v6.1; not flashed.
 
 ## Completed
 * Phase 0 (`bc9a39f`): analysis, requirements, registers, ADR-001..011, protocol spec, knowledge DB
@@ -19,6 +19,10 @@ Target-version (6.0.2) build pending in CI.
   Gateway gained `reportDiagnostic()` and `STATUS buserr=`. CI workflow (host GCC/Clang with
   ASan/UBSan, IDF 6.0.2 sim/vehicle builds). Docs: `build-and-release.md`, `hardware-wiring.md`,
   firmware guide §7.
+* Phase 2c (`ec5b86f`): firmware build verified with ESP-IDF v6.1 (both profiles, 0 warnings).
+* Phase 3a (this checkpoint): `apps/desktop-qt` – `desktop_core` (Transport, SimulationTransport,
+  GatewayClient, value types), skeleton `MainWindow`, 11 Qt Test cases; `Gateway::emit` renamed to
+  `sendFrame` (Qt `emit` macro clash); CMake `enable_testing()` order fixed; CI desktop job.
 
 ## In progress
 * none
@@ -34,6 +38,8 @@ Target-version (6.0.2) build pending in CI.
 ```
 cmake --preset host-debug && cmake --build --preset host-debug && ctest --preset host-debug
 → 100% passed: core_tests 48, protocol_tests 22, gateway_tests 26; 0 warnings (MinGW 13.1)
+QT_ROOT=C:/Qt/6.11.1/mingw_64; cmake --preset windows-debug && cmake --build --preset windows-debug && ctest --preset windows-debug
+→ 4/4 executables pass (desktop_tests: 11 cases), 0 warnings; app smoke-starts offscreen
 ```
 Firmware (ESP-IDF v6.1, Windows): `idf.py -B build-sim ... sdkconfig.defaults.simulation build` and
 `idf.py -B build-vehicle ... sdkconfig.defaults.vehicle build` → both "Project build complete", 0 warnings.
@@ -48,7 +54,12 @@ CI workflow written but never run (nothing pushed).
 * Whether to push so CI can verify 6.0.2 and the sanitizer host builds.
 
 ## Next task
-1. W5: desktop skeleton (Qt Widgets, loopback transport running gateway-core + SimulatedEcu).
+1. W6: desktop data layer – `libs/dtc-knowledge` (Qt SQL, read-only knowledge DB, Unknown DTC fallback,
+   structured errors) and the audit DB with `PRAGMA user_version` migrations; Qt tests with fixture DBs
+   and failure injection.
+2. W7: services (DtcScanService with separate acquisition / enrichment / audit outcomes, LiveDataService
+   with fresh/stale/unsupported/error states).
+3. SerialTransport (QSerialPort on a worker thread) as soon as the Qt Serial Port module is installed.
 Flashing remains a separate step requiring explicit user permission.
 
 ## Last checkpoint commit

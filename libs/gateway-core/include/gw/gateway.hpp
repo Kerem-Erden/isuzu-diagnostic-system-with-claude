@@ -114,7 +114,8 @@ private:
     void endSession() noexcept;
     void updateTransmitState() noexcept;
 
-    void emit(std::string_view frame) noexcept;
+    // Not named "emit": Qt defines `emit` as a macro and this header is included by the desktop.
+    void sendFrame(std::string_view frame) noexcept;
     proto::FrameWriter& beginEvent(std::string_view kind) noexcept;
     void traceFrame(const char* kind, const diag::CanFrame& frame) noexcept;
 
