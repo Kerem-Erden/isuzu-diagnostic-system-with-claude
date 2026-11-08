@@ -9,8 +9,15 @@
  */
 
 #include <QMainWindow>
+#include <memory>
 
+class AuditStore;
+class DtcScanService;
 class GatewayClient;
+namespace knowledge {
+class KnowledgeRepository;
+}
+struct DtcScanResult;
 class QComboBox;
 class QLabel;
 class QListWidget;
@@ -25,8 +32,10 @@ class MainWindow final : public QMainWindow {
     Q_OBJECT
 public:
     explicit MainWindow(QWidget* parent = nullptr);
+    ~MainWindow() override;
 
 private:
+    void onScan(const DtcScanResult& result);
     void onIdentity(const GatewayIdentity& identity);
     void onReply(const GatewayReply& reply);
     void onEvent(const GatewayEvent& event);
@@ -47,5 +56,8 @@ private:
     QPushButton* readDtcButton_;
     QPushButton* liveButton_;
     QListWidget* log_;
+    std::unique_ptr<knowledge::KnowledgeRepository> knowledge_;
+    std::unique_ptr<AuditStore> audit_;
+    DtcScanService* scanService_;
     bool liveRunning_ = false;
 };

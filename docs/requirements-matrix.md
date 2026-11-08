@@ -20,9 +20,9 @@ Status values: `planned`, `in-progress`, `implemented (host-tested)`,
 | R-09 | Negative response incl. NRC 0x78 (response pending, P2* extension) | brief §11 | `diagnostic-core/obd`, `isotp` | unit tests | implemented (host-tested, core) |
 | R-10 | Unrelated frame / wrong responder / stale frame ignored | brief §11 | `diagnostic-core` | unit tests | implemented (host-tested, core) |
 | R-11 | Structured error stage + code + detail across firmware → protocol → desktop | brief §11 | `diagnostic-core/error`, `serial-protocol` | unit + integration | implemented in core/protocol/gateway (host-tested); desktop pending |
-| R-12 | DTC enrichment from knowledge DB; Unknown DTC fallback, no exception | brief §13 | `dtc-knowledge` | Qt Test with fixture DB | planned |
-| R-13 | Acquisition, enrichment and audit results kept separate; DB/audit failure never hides a successful ECU result | brief §10, old D3 | desktop `services` | service tests with failing repos | planned |
-| R-14 | Sessions, raw results and errors persisted (audit DB with migrations) | brief §3, §13 | desktop `data` | Qt Test | planned |
+| R-12 | DTC enrichment from knowledge DB; Unknown DTC fallback, no exception | brief §13 | `dtc-knowledge` | Qt Test with fixture DB | implemented (Qt-tested with the real DB + broken fixtures) |
+| R-13 | Acquisition, enrichment and audit results kept separate; DB/audit failure never hides a successful ECU result | brief §10, old D3 | desktop `services` | service tests with failing repos | implemented (DtcScanService; Qt-tested incl. real audit failure) |
+| R-14 | Sessions, raw results and errors persisted (audit DB with migrations) | brief §3, §13 | desktop `data` | Qt Test | in-progress (sessions + DTC scans persisted; live/error history pending) |
 | R-15 | Developer diagnostics: bounded, filterable structured events | brief §3, §17 | firmware `diagnostics`, desktop `ui` | unit + model tests | planned |
 | R-16 | Mode 04 architecture present, disabled by default (compile + runtime), never sent to a vehicle without explicit permission | brief §4, §11 | `diagnostic-core/obd`, firmware cfg | simulation tests only | in-progress (codec compile-gated; gateway answers CAPABILITY/DISABLED) |
 | R-17 | Versioned serial protocol, request correlation, max size, resync after garbage, boot-log tolerance, duplicate side-effect guard | brief §12 | `serial-protocol` | unit tests | implemented (host-tested) |

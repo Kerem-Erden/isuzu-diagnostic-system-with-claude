@@ -28,6 +28,9 @@ Nothing in this repository is vehicle-validated. Every feature below is at most
 | Desktop app starts | MANUAL smoke | `isuzu_diagnostic.exe` with `QT_QPA_PLATFORM=offscreen` still running after 3 s; no UI interaction verified |
 | SerialTransport without hardware: CP210x id recognition, enumeration, async open failure → closed once, client reports connectionFailed, no-op when closed, safe destruction during open, no transport switch while connected | AUTO | `ctest --preset windows-debug` → 5/5 (desktop_serial_tests 7 cases), 2026-11-08 |
 | Desktop handling of a physical USB unplug | ASSUMED | not yet tested by pulling the cable |
+| Knowledge lookup: Known (P0087 with OEM-procedure profile), application preference, Unknown (P3FFF), invalid code, missing / corrupt / foreign-schema DB, read-only (SHA-256 unchanged) | AUTO | `ctest --preset windows-debug` → 7/7, desktop_data_tests 18 cases, 2026-11-08 |
+| Audit DB: migration from empty, idempotent reopen, newer schema refused, source CHECK, round trip of a failed scan | AUTO | same run |
+| DtcScanService outcome separation (Known/Unknown, missing knowledge keeps codes, audit failure keeps scan, NRC scan audited, zero DTCs audited, busy rejection) | AUTO + SIM | same run |
 | TwaiAdapter listen-only boot, TX slot lifetime, ISR → queue | ASSUMED | design reviewed only; requires ESP32 bench test |
 
 ## Inherited facts from the reference system (not re-verified here)

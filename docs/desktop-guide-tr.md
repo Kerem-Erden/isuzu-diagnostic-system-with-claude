@@ -68,6 +68,18 @@ Hata enjeksiyonu: `setLinkMuted()` (ölü hat), `injectToDesktop()` (gürültü 
 | Gateway reboot | `EVT BOOT` gelirse istekler iptal edilir, HELLO tekrarlanır, kaynak değiştiyse bağlantı reddedilir |
 | Uzun DTC listesi | `DTC_PART` olayları birleştirilir; `count` tutmazsa `PROTOCOL/MALFORMED_PAYLOAD` (sessizce kırpılmış liste gösterilmez) |
 
+## 4b. Veri katmanı ve DtcScanService
+
+* `KnowledgeRepository` (libs/dtc-knowledge): salt okunur bilgi DB'si. Geçerli ama DB'de olmayan kod
+  **Unknown** sonucudur, hata değildir. Ayrıntı: `dtc-database.md`.
+* `AuditStore`: yazılabilir geçmiş DB'si, `PRAGMA user_version` ile migration.
+* `DtcScanService` üç sonucu **ayrı** raporlar: acquisition (ECU cevabı), enrichment (kod başına
+  Known / Unknown / KnowledgeUnavailable) ve audit. DB veya audit hatası başarılı bir ECU taramasını
+  asla "Scan failed" yapmaz (eski sistemdeki D3 hatası).
+* Qt tuzağı: içeriği olmayan "null" `QString` SQL'e `NULL` olarak bağlanır. `NULL = ''` SQL'de doğru
+  değildir ve `NOT NULL` kısıtını bozar. Testler bunu üç yerde yakaladı; çözüm `sqlText()` / `text()`
+  yardımcılarıdır.
+
 ## 5. Neden her şey sinyal?
 
 `send()` bir id döndürür; sonuç her zaman `replyReceived(reply)` sinyaliyle gelir. Bağlantı

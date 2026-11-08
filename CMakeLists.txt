@@ -27,5 +27,6 @@ if(ISUZU_BUILD_TESTS)
 endif()
 
 if(ISUZU_BUILD_DESKTOP)
+    add_subdirectory(libs/dtc-knowledge)
     add_subdirectory(apps/desktop-qt)
 endif()

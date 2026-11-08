@@ -1,15 +1,20 @@
 #include "ui/main_window.hpp"
 
+#include <QComboBox>
+#include <QCoreApplication>
 #include <QDateTime>
+#include <QDir>
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QListWidget>
 #include <QPushButton>
+#include <QStandardPaths>
 #include <QVBoxLayout>
 
-#include <QComboBox>
-
+#include "data/audit_store.hpp"
 #include "gateway/gateway_client.hpp"
+#include "knowledge/knowledge_repository.hpp"
+#include "services/dtc_scan_service.hpp"
 #include "transport/serial_transport.hpp"
 #include "transport/simulation_transport.hpp"
 
@@ -29,7 +34,12 @@ MainWindow::MainWindow(QWidget* parent)
       connectButton_(new QPushButton(tr("Connect"))),
       readDtcButton_(new QPushButton(tr("Read DTCs"))),
       liveButton_(new QPushButton(tr("Start live data"))),
-      log_(new QListWidget) {
+      log_(new QListWidget),
+      knowledge_(std::make_unique<knowledge::KnowledgeRepository>(
+          QDir(QCoreApplication::applicationDirPath()).filePath(QStringLiteral("data/isuzu-knowledge.db")))),
+      audit_(std::make_unique<AuditStore>(
+          QDir(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation)).filePath(QStringLiteral("audit.db")))),
+      scanService_(new DtcScanService(client_, knowledge_.get(), audit_.get(), this)) {
     setWindowTitle(tr("Isuzu Diagnostic System"));
     resize(900, 600);
 
@@ -63,7 +73,19 @@ MainWindow::MainWindow(QWidget* parent)
         if (client_->state() == GatewayClient::State::Disconnected) connectSelected();
         else client_->disconnectFromGateway();
     });
-    connect(readDtcButton_, &QPushButton::clicked, this, [this] { client_->send(QStringLiteral("READ_DTC")); });
+    connect(readDtcButton_, &QPushButton::clicked, scanService_, &DtcScanService::startScan);
+    connect(scanService_, &DtcScanService::scanFinished, this, &MainWindow::onScan);
+
+    // Both databases are optional at runtime: without them scans still show raw ECU codes.
+    const diag::Error knowledgeOpen = knowledge_->open();
+    log(knowledgeOpen.isOk()
+            ? tr("Knowledge DB %1 (dataset %2)").arg(knowledge_->databasePath(), knowledge_->datasetVersion())
+            : tr("Knowledge DB unavailable (%1/%2): DTCs will be shown without descriptions")
+                  .arg(QLatin1String(diag::toString(knowledgeOpen.stage)), QLatin1String(diag::toString(knowledgeOpen.code))));
+    const diag::Error auditOpen = audit_->open();
+    log(auditOpen.isOk() ? tr("Audit DB %1 (schema v%2)").arg(audit_->databasePath()).arg(audit_->schemaVersion())
+                         : tr("Audit DB unavailable (%1): history will not be recorded")
+                               .arg(QLatin1String(diag::toString(auditOpen.code))));
     connect(liveButton_, &QPushButton::clicked, this, [this] {
         client_->send(liveRunning_ ? QStringLiteral("LIVE_STOP") : QStringLiteral("LIVE_START"),
                       liveRunning_ ? QStringList{} : QStringList{QStringLiteral("1000")});
@@ -78,6 +100,9 @@ MainWindow::MainWindow(QWidget* parent)
     });
     connect(client_, &GatewayClient::protocolWarning, this, [this](const QString& text) { log(tr("Protocol: %1").arg(text)); });
 }
+
+// Out of line so unique_ptr can see the complete repository/store types.
+MainWindow::~MainWindow() = default;
 
 void MainWindow::refreshPorts() {
     const QString previous = portCombo_->currentData().toString();
@@ -146,6 +171,42 @@ void MainWindow::onIdentity(const GatewayIdentity& identity) {
                                identity.idType == QLatin1String("STD") ? QStringLiteral("11") : QStringLiteral("29")));
     setConnectedUi(true);
     log(tr("Connected: source=%1").arg(identity.source));
+
+    qint64 sessionId = 0;
+    const diag::Error session = audit_->isOpen() ? audit_->beginSession(identity, client_->transport()->description(), sessionId)
+                                                 : diag::fail(diag::Stage::Audit, diag::Code::InvalidState);
+    scanService_->setSessionId(session.isOk() ? sessionId : 0);
+    if (!session.isOk()) log(tr("Audit session not created (%1)").arg(QLatin1String(diag::toString(session.code))));
+}
+
+void MainWindow::onScan(const DtcScanResult& result) {
+    const QString source = result.source.isEmpty() ? tr("?") : result.source;
+    if (!result.acquired) {
+        log(tr("DTC scan #%1 [%2] FAILED at %3/%4/%5")
+                .arg(result.requestId)
+                .arg(source, QLatin1String(diag::toString(result.acquisitionError.stage)),
+                     QLatin1String(diag::toString(result.acquisitionError.code)))
+                .arg(result.acquisitionError.detail, 2, 16, QLatin1Char('0')));
+    } else {
+        log(tr("DTC scan #%1 [%2] ECU %3: %n stored code(s)", nullptr, static_cast<int>(result.entries.size()))
+                .arg(result.requestId)
+                .arg(source, result.ecu));
+        for (const DtcEntry& entry : result.entries) {
+            switch (entry.status) {
+                case EnrichmentStatus::Known:
+                    log(tr("   %1  %2  (%3)").arg(entry.code, entry.knowledge.title, entry.knowledge.system));
+                    break;
+                case EnrichmentStatus::Unknown:
+                    log(tr("   %1  Unknown DTC – not in the knowledge database").arg(entry.code));
+                    break;
+                case EnrichmentStatus::KnowledgeUnavailable:
+                    log(tr("   %1  (knowledge unavailable: %2)").arg(entry.code, QLatin1String(diag::toString(entry.knowledgeError.code))));
+                    break;
+            }
+        }
+    }
+    // Audit outcome is reported separately – it never changes the scan result above.
+    log(result.audited ? tr("   audit: saved") : tr("   audit: NOT saved (%1)").arg(QLatin1String(diag::toString(result.auditError.code))));
 }
 
 void MainWindow::onReply(const GatewayReply& reply) {
@@ -157,13 +218,7 @@ void MainWindow::onReply(const GatewayReply& reply) {
         liveRunning_ = false;
         liveButton_->setText(tr("Start live data"));
     }
-    if (reply.command == QLatin1String("READ_DTC") && reply.ok) {
-        const QString codes = reply.value(QStringLiteral("dtcs"));
-        log(tr("DTCs (%1) from ECU %2: %3")
-                .arg(reply.value(QStringLiteral("count")), reply.value(QStringLiteral("ecu")),
-                     codes.isEmpty() ? tr("none stored") : codes));
-        return;
-    }
+    if (reply.command == QLatin1String("READ_DTC")) return;  // reported by onScan()
     log(tr("%1 #%2 → %3").arg(reply.command).arg(reply.id).arg(reply.ok ? tr("OK") : reply.errorText()));
 }
 

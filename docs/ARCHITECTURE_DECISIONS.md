@@ -47,8 +47,9 @@ Status: `confirmed` (implemented and verified by build/tests) or `provisional`
 * **Rationale:** Avoids network/vendored dependencies; Qt Test is already part of the Qt install.
 
 ## ADR-007 — Knowledge DB reused read-only; separate audit DB with migrations
-* **Date:** 2026-11-08 · **Status:** provisional
-* **Decision:** `isuzu-knowledge.db` ships as a read-only resource; the application never writes to it. Audit/history lives in `%LOCALAPPDATA%/IsuzuDiagnostic/audit.db`, versioned by `PRAGMA user_version` with ordered migration scripts in `apps/desktop-qt/resources/migrations/`.
+* **Date:** 2026-11-08 · **Status:** confirmed (implemented and tested 2026-11-08)
+* **Decision:** `isuzu-knowledge.db` ships as a read-only resource; the application never writes to it. Audit/history lives in `%LOCALAPPDATA%/IsuzuDiagnostic/audit.db`, versioned by `PRAGMA user_version` with ordered migrations embedded as string constants in `apps/desktop-qt/src/data/audit_store.cpp`
+  (simpler than resource files; reviewed in one place).
 * **Consequences:** Knowledge and audit failures are independent; either missing still leaves raw ECU results visible.
 
 ## ADR-008 — Mode 04 defence in depth, disabled by default

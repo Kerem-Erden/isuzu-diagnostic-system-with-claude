@@ -59,6 +59,8 @@ On this Windows machine the host toolchain is Qt's MinGW: put
 `tests/unit/desktop/test_gateway_client.cpp` – 11 cases, GatewayClient over SimulationTransport
 (real gateway-core + SimulatedEcu). Labels `unit;desktop;simulation`. Requires the `windows-debug` preset.
 
+`tests/unit/desktop/test_data_layer.cpp` – 18 cases: knowledge repository against the real read-only DB and broken fixtures, audit migrations/failures, DtcScanService outcome separation (labels `unit;desktop;database;simulation`).
+
 ## Hardware bench (opt-in)
 
 `tests/hardware/test_serial_bench.cpp` (`bench_serial_tests`, labels `hardware;bench`) runs only when

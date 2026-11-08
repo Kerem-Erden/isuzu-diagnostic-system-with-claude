@@ -3,8 +3,8 @@
 _Last updated: 2026-11-08_
 
 ## Current phase
-Phase 3 (desktop infrastructure) started: transport abstraction, SimulationTransport, GatewayClient and
-a skeleton window work and are tested. Firmware (Phase 2) builds with ESP-IDF v6.1; not flashed.
+Phase 3 (desktop infrastructure): transports, GatewayClient, knowledge + audit data layer and DtcScanService
+work and are tested. Firmware (Phase 2) builds with ESP-IDF v6.1; not flashed.
 
 ## Completed
 * Phase 0 (`bc9a39f`): analysis, requirements, registers, ADR-001..011, protocol spec, knowledge DB
@@ -30,6 +30,10 @@ a skeleton window work and are tested. Firmware (Phase 2) builds with ESP-IDF v6
 * First ESP32 bench run (2026-11-08, user permission): simulation firmware (build d0636b0e) flashed to the
   ESP32-D0WD-V3 on COM5; protocol verified with an independent Python client and with the C++ desktop path
   (`bench_serial_tests`). TWAI/CAN not exercised (simulation profile).
+* Phase 3c (this checkpoint): `libs/dtc-knowledge` (read-only KnowledgeRepository, schema validation,
+  Unknown DTC fallback), `AuditStore` (sessions + dtc_scans, user_version migrations), `DtcScanService`
+  (acquisition / enrichment / audit reported separately), window shows Known/Unknown/unavailable and audit
+  status; knowledge DB copied next to the exe. `desktop_data_tests` 18 cases. Docs: `dtc-database.md`.
 
 ## In progress
 * none
@@ -47,7 +51,7 @@ a skeleton window work and are tested. Firmware (Phase 2) builds with ESP-IDF v6
 cmake --preset host-debug && cmake --build --preset host-debug && ctest --preset host-debug
 → 100% passed: core_tests 48, protocol_tests 22, gateway_tests 26; 0 warnings (MinGW 13.1)
 QT_ROOT=C:/Qt/6.11.1/mingw_64; cmake --preset windows-debug && cmake --build --preset windows-debug && ctest --preset windows-debug
-→ 6/6 pass (desktop_tests 11, desktop_serial_tests 7; bench_serial_tests skips without ISUZU_BENCH_PORT), 0 warnings
+→ 7/7 pass (desktop_tests 11, desktop_serial_tests 7, desktop_data_tests 18; bench skips without ISUZU_BENCH_PORT), 0 warnings
 ISUZU_BENCH_PORT=COM5 bench_serial_tests.exe → pass against the ESP32 (simulation firmware)
 ```
 Firmware (ESP-IDF v6.1, Windows): `idf.py -B build-sim ... sdkconfig.defaults.simulation build` and
@@ -62,15 +66,13 @@ CI workflow written but never run (nothing pushed).
 * Whether to push so CI can verify 6.0.2 and the sanitizer host builds.
 
 ## Next task
-1. W6: desktop data layer – `libs/dtc-knowledge` (Qt SQL, read-only knowledge DB, Unknown DTC fallback,
-   structured errors) and the audit DB with `PRAGMA user_version` migrations; Qt tests with fixture DBs
-   and failure injection.
-2. W7: services (DtcScanService with separate acquisition / enrichment / audit outcomes, LiveDataService
-   with fresh/stale/unsupported/error states).
-3. Bench items still open: physical USB unplug while connected; desktop app GUI against COM5 (manual).
-4. CAN hardware path (vehicle firmware, transceiver electrical checks) only after the written
-   vehicle-validation plan and with explicit permission.
-Flashing remains a separate step requiring explicit user permission.
+1. W7 rest: `LiveDataService` – per-PID model with value, unit, timestamp and fresh / stale /
+   unsupported / error state (from LIVE / LIVE_ERR events), keep-alive aware; Qt tests over SimulatedEcu
+   scenarios (UNSUPPORTED_VOLTAGE, SILENT back-off).
+2. W8: real screens (dashboard, live data table, DTC list/detail with causes/steps/related live data,
+   history from AuditStore, developer diagnostics, settings / ECU profile).
+3. Bench items still open: physical USB unplug while connected; GUI against COM5 (manual).
+4. CAN hardware path only after the written vehicle-validation plan and explicit permission.
 
 ## Last checkpoint commit
 * see `git log --oneline -1`
