@@ -69,6 +69,7 @@ if(ISUZU_BUILD_TESTS)
     isuzu_add_qt_test(desktop_data_tests unit/desktop/test_data_layer.cpp "unit;desktop;database;simulation")
     isuzu_add_qt_test(desktop_live_tests unit/desktop/test_live_data.cpp "unit;desktop;simulation")
     isuzu_add_qt_test(desktop_model_tests unit/desktop/test_models.cpp "unit;desktop;simulation")
+    isuzu_add_qt_test(integration_tests integration/test_end_to_end.cpp "integration;simulation")
     # Skips itself unless ISUZU_BENCH_PORT names a COM port with the SIMULATION firmware attached.
     isuzu_add_qt_test(bench_serial_tests hardware/test_serial_bench.cpp "hardware;bench")
 endif()

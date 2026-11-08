@@ -28,12 +28,12 @@ Status values: `planned`, `in-progress`, `implemented (host-tested)`,
 | R-17 | Versioned serial protocol, request correlation, max size, resync after garbage, boot-log tolerance, duplicate side-effect guard | brief §12 | `serial-protocol` | unit tests | implemented (host-tested) |
 | R-18 | Configurable ECU request/response IDs (default 0x7E0/0x7E8), 11-bit, 500 kbit/s | brief §11 | firmware config, protocol `CONFIG` | unit tests | planned |
 | R-19 | Vehicle/ECU profile influences connection config or is explicitly marked unsupported | brief §11, old D7 | desktop `domain` | unit tests | explicitly limited: profile selects knowledge application only; CAN addressing fixed by firmware, stated in UI |
-| R-20 | Simulation drives the real protocol/transport path (no UI injection); scenarios: live, 0/1/many/unknown DTC, timeout, malformed, disconnect, NRC | brief §13 | `tools/sim-gateway`, desktop `services` | integration tests | in-progress (SimulatedEcu + gateway done; desktop wiring pending) |
+| R-20 | Simulation drives the real protocol/transport path (no UI injection); scenarios: live, 0/1/many/unknown DTC, timeout, malformed, disconnect, NRC | brief §13 | `tools/sim-gateway`, desktop `services` | integration tests | implemented (SimulatedEcu at CAN-frame level drives the real gateway/protocol/desktop chain; integration-tested) |
 | R-21 | Correlation ID per diagnostic operation; bounded logs | brief §14 | all | review + tests | in-progress (request ids end-to-end in gateway) |
 | R-22 | Doxygen comments + Turkish learning guides | brief §15 | docs | review | planned |
-| R-23 | CMake presets (Debug/Release), CTest, CI, windeployqt packaging | brief §18 | build | CI run | planned |
+| R-23 | CMake presets (Debug/Release), CTest, CI, windeployqt packaging | brief §18 | build | CI run | implemented locally (presets, CTest 10 suites, windeployqt package script); CI defined, not yet run |
 | R-24 | ESP-IDF 6.0.2 firmware, simulation and vehicle profiles, build ≠ flash | brief §7, §18 | firmware | CI IDF build | planned |
-| R-25 | Read-only vehicle validation plan (document only) | brief §19 phase 6 | docs | review | planned |
+| R-25 | Read-only vehicle validation plan (document only) | brief §19 phase 6 | docs | review | documented (vehicle-validation-plan.md); prerequisites W15–W17 open |
 | R-26 | Live-data reference comparison with hysteresis and duration confirmation (old MVP feature) | old mvp-scope §3.4 | desktop `services` | unit tests | deferred (post-MVP, data reused) |
 | R-27 | Pins configurable constants (CTX GPIO21, CRX GPIO22) | brief §6 | firmware `drivers` | review | planned |
 

@@ -56,7 +56,19 @@ the board is not connected to a vehicle. Close the desktop app first – only on
 
 ## 3. Desktop (Qt 6, Windows)
 
-To be completed in Phase 3 (windeployqt packaging).
+Development build: `developer-setup.md`. Release package:
+
+```powershell
+tools/package-windows.ps1 -QtRoot C:/Qt/6.11.1/mingw_64 -MinGwBin C:/Qt/Tools/mingw1310_64/bin -NinjaDir C:/Qt/Tools/Ninja
+```
+
+The script configures `windows-release`, builds, **runs all tests** (no package from a failing
+build), copies the exe and `data/isuzu-knowledge.db`, runs `windeployqt --release --compiler-runtime`
+(only the QSQLITE driver is kept), writes `PACKAGE.txt` (version, commit, Qt version, knowledge DB
+SHA-256, validation warning) and zips `dist/IsuzuDiagnostic-<version>-<commit>-win64`.
+
+Verified 2026-11-08: the unpacked folder runs with only `C:\Windows\System32` on `PATH` (no Qt, no
+MinGW): connects to the simulation, finds the knowledge DB, saves audit rows. `dist/` is not committed.
 
 ## 4. CI
 

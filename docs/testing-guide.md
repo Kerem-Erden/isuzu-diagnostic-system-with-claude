@@ -74,6 +74,10 @@ build/windows-debug/apps/desktop-qt/isuzu_diagnostic.exe --screenshots C:/temp/s
 
 Connects to the in-process SIMULATION only, reads DTCs, runs live data and saves `page-N.png` for every screen. `QStandardPaths` test mode keeps its audit rows out of the real profile. The offscreen platform picks a different font than the real Windows style.
 
+## Integration
+
+`tests/integration/test_end_to_end.cpp` (`integration_tests`, labels `integration;simulation`): one session through every layer, including fault injection and unplug.
+
 ## Hardware bench (opt-in)
 
 `tests/hardware/test_serial_bench.cpp` (`bench_serial_tests`, labels `hardware;bench`) runs only when

@@ -3,8 +3,8 @@
 _Last updated: 2026-11-08_
 
 ## Current phase
-Phase 4 (UI) done in simulation: all seven screens built and screenshot-reviewed. Next: Phase 5 (integration,
-CI run, packaging) and Phase 6 (written vehicle-validation plan). Firmware (Phase 2) builds with ESP-IDF v6.1; not flashed.
+Phases 0–6 delivered for the software/simulation MVP. Nothing is vehicle-validated. Open: W15–W18
+(bench/passive tools, log export, first CI run) before any vehicle step. Firmware (Phase 2) builds with ESP-IDF v6.1; not flashed.
 
 ## Completed
 * Phase 0 (`bc9a39f`): analysis, requirements, registers, ADR-001..011, protocol spec, knowledge DB
@@ -37,9 +37,12 @@ CI run, packaging) and Phase 6 (written vehicle-validation plan). Firmware (Phas
 * Phase 3d (`7c0106e`): `LiveDataService` (per-PID value/unit/timestamps/state, source label,
   unsupported/error handling, gateway stop reasons, immediate staleness on disconnect) and a live table in
   the window. `desktop_live_tests` 9 cases. Phase 3 (desktop infrastructure) complete.
-* Phase 4 (this checkpoint): Qt Widgets shell (`AppWindow`: banner, sidebar, stack, status bar) and seven pages
+* Phase 4 (`2bcf387`): Qt Widgets shell (`AppWindow`: banner, sidebar, stack, status bar) and seven pages
   (Connection + profile + identity, Dashboard, Live data, DTC list/detail, History, Developer, Settings);
   `ConnectionController`, view models, `--screenshots` developer tour. `desktop_model_tests` 6 cases.
+* Phase 5/6 (this checkpoint): `tools/package-windows.ps1` (Release + tests + windeployqt, QSQLITE only,
+  PACKAGE.txt) verified standalone; end-to-end integration test; documents `vehicle-validation-plan.md`,
+  `known-limitations.md`, `troubleshooting.md`. New prerequisites W15–W18 recorded.
 
 ## In progress
 * none
@@ -57,7 +60,8 @@ CI run, packaging) and Phase 6 (written vehicle-validation plan). Firmware (Phas
 cmake --preset host-debug && cmake --build --preset host-debug && ctest --preset host-debug
 → 100% passed: core_tests 48, protocol_tests 22, gateway_tests 26; 0 warnings (MinGW 13.1)
 QT_ROOT=C:/Qt/6.11.1/mingw_64; cmake --preset windows-debug && cmake --build --preset windows-debug && ctest --preset windows-debug
-→ 9/9 pass (desktop 11, serial 7, data 18, live 9, models 6; bench skips without ISUZU_BENCH_PORT), 0 warnings
+→ 10/10 pass (desktop 11, serial 7, data 18, live 9, models 6, integration 1; bench skips without ISUZU_BENCH_PORT), 0 warnings
+tools/package-windows.ps1 → Release build, 9 test executables pass (+ skipped bench), package runs standalone
 ISUZU_BENCH_PORT=COM5 bench_serial_tests.exe → pass against the ESP32 (simulation firmware)
 ```
 Firmware (ESP-IDF v6.1, Windows): `idf.py -B build-sim ... sdkconfig.defaults.simulation build` and
@@ -72,12 +76,10 @@ CI workflow written but never run (nothing pushed).
 * Whether to push so CI can verify 6.0.2 and the sanitizer host builds.
 
 ## Next task
-1. Phase 5: windeployqt packaging script + `build-and-release.md` desktop section; integration test of the
-   full chain desktop → protocol → gateway-core → SimulatedEcu → SQLite → models (most links already covered,
-   add one end-to-end test); decide with the user whether to push so CI (sanitizers, IDF 6.0.2, Qt 6.8) runs.
-2. Phase 6 (documents only): `vehicle-validation-plan.md` (electrical checklist, passive capture, single
-   controlled Mode 01 / Mode 03), `troubleshooting.md`, `known-limitations.md`.
-3. Manual: run the GUI on Windows against COM5 and pull the USB cable once (unplug path).
+1. User decision: push to GitHub so CI runs (W18) – never pushed so far.
+2. W17 developer-log export + single READ_PID control (small, desktop only).
+3. W15 / W16 firmware bench self-test and passive monitor – then the electrical checklist with the user.
+4. Manual: GUI against COM5 incl. one USB unplug.
 
 ## Last checkpoint commit
 * see `git log --oneline -1`
