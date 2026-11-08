@@ -84,15 +84,13 @@ CI workflow written but never run (nothing pushed).
 * RK-01 Physical CAN path unproven.
 
 ## Open questions
-* Was the transceiver module connected/powered during the bench run on 2026-11-08?
+* none (user confirmed 2026-11-08: SN65HVD230 was connected and powered during the bench run)
 
 ## Next task
-1. User: confirm whether the SN65HVD230 module was attached and powered during the bench run (a floating
-   CRX also reads 1).
-2. User with a multimeter: `vehicle-validation-plan.md` §2.1 – VCC 3.3 V, **Rs pin low**, CTX/CRX idle levels,
+1. User with a multimeter: `vehicle-validation-plan.md` §2.1 – VCC 3.3 V, **Rs pin low**, CTX/CRX idle levels,
    GPIO21→D and GPIO22→R continuity. Then re-run the bench self-test (flash bench profile, run
    `tools/bench_check.py`), re-flash simulation.
-3. Manual: GUI against COM5 incl. one USB unplug.
+2. Manual: GUI against COM5 incl. one USB unplug.
 
 ## Last checkpoint commit
 * see `git log --oneline -1`
