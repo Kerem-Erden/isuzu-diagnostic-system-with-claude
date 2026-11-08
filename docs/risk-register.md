@@ -12,7 +12,7 @@ Likelihood / impact: L = low, M = medium, H = high.
 | RK-06 | CP210x driver blocks on close after unplug, freezing UI | M | H | QSerialPort on worker thread, UI talks via queued signals | Mitigated by design |
 | RK-07 | Knowledge DB schema drift or missing file | M | M | Startup validation, structured `KnowledgeError`, raw DTC still shown | Mitigated by design |
 | RK-08 | Qt Serial Port module not installed locally (only Core/Widgets/Sql/Test present in `C:\Qt\6.11.1\mingw_64`) | H | M | Desktop transport build guarded; user must add the "Qt Serial Port" component via Qt MaintenanceTool | **Open – blocker for desktop transport build** |
-| RK-09 | ESP-IDF 6.0.2 not installed on Windows (v5.5.4 present but its Python env is broken); user has IDF in a Linux VM (version unconfirmed) | H | M | Shared libs host-tested; firmware build in the VM or CI (`espressif/esp-idf-ci-action`, v6.0.2) | **Open – firmware never compiled yet** |
+| RK-09 | Local ESP-IDF is v6.1, target is 6.0.2 – API drift could hide 6.0.2-only build issues | M | L | Both profiles build cleanly with v6.1 locally; CI pins v6.0.2 | Mitigated locally; CI run pending |
 | RK-10 | Knowledge content derived from OEM manuals may be inaccurate for a specific vehicle | M | M | UI wording "possible causes", source/application shown, never a definitive diagnosis | Accepted |
 | RK-11 | ECU uses a different physical address than 0x7E0/0x7E8 or requires 29-bit IDs | M | M | Configurable IDs; read-only passive capture first to observe responders | Open |
 | RK-12 | NRC 0x78 storm or endless pending responses | L | M | P2* deadline bounded, maximum pending count | Mitigated by design |

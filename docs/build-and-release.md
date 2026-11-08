@@ -55,6 +55,7 @@ To be completed in Phase 3 (windeployqt packaging).
 
 ## 5. Local environment notes (2026-11-08)
 
-* Windows ESP-IDF v5.5.4 (EIM) is present but its Python environment is broken
-  (`No module named 'rich'` from `export.ps1`). It was not repaired; firmware builds are done in
-  the VM / CI.
+* Windows ESP-IDF **v6.1** (EIM, `C:/esp/v6.1/esp-idf`) builds both profiles. Activate in PowerShell:
+  `. C:/Espressif/tools/Microsoft.v6.1.PowerShell_profile.ps1`, then use the commands in §2.
+  The project targets 6.0.2 (CI); 6.1 is used locally as the closest available version.
+* The older v5.5.4 install has a broken Python environment (`No module named 'rich'`) and is unused.

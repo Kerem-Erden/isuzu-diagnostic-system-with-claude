@@ -1,8 +1,8 @@
 # Firmware Rehberi (gateway-core + ESP32)
 
 > Durum: `libs/gateway-core` host üzerinde test edildi. ESP-IDF projesi
-> (`firmware/esp32-gateway`) yazıldı ancak **henüz derlenmedi** (yerel IDF kurulumu bozuk;
-> derleme VM veya CI'da yapılacak). Bölüm 7'ye bakın.
+> (`firmware/esp32-gateway`) Windows'ta ESP-IDF v6.1 ile her iki profilde uyarısız derlendi;
+> henüz ESP32'ye yüklenmedi. Bölüm 7'ye bakın.
 
 **Okuma sırası:** `gw/ports.hpp` → `gw/gateway.hpp` → `src/gateway.cpp` →
 `gw/simulated_ecu.hpp` → `tests/unit/gateway/test_gateway.cpp`.

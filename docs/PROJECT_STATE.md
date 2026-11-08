@@ -3,8 +3,8 @@
 _Last updated: 2026-11-08_
 
 ## Current phase
-Phase 2 (ESP32 firmware): code written, **not yet compiled**. Waiting for an ESP-IDF 6.0.2 build
-in the user's Linux VM or in CI.
+Phase 2 (ESP32 firmware): both profiles build with local ESP-IDF v6.1 (0 warnings). Not flashed.
+Target-version (6.0.2) build pending in CI.
 
 ## Completed
 * Phase 0 (`bc9a39f`): analysis, requirements, registers, ADR-001..011, protocol spec, knowledge DB
@@ -12,7 +12,7 @@ in the user's Linux VM or in CI.
 * Phase 1a (`718c7e1`): `libs/diagnostic-core`.
 * Phase 1b (`0bd2950`): `libs/serial-protocol`.
 * Phase 2a (`81d8809`): `libs/gateway-core` + `SimulatedEcu`.
-* Phase 2b (this checkpoint, unverified build): `firmware/esp32-gateway` – `isuzu_shared` component
+* Phase 2b (`b5f7168`, build verified with IDF v6.1 in the next commit): `firmware/esp32-gateway` – `isuzu_shared` component
   compiling the libs, Kconfig (source, scenario, bitrate, ECU ID, pins; no Mode 04 option),
   layered `sdkconfig.defaults*`, `TwaiAdapter` (listen-only default, static event queue, 4 TX slots
   released only by TX-done/node delete, no HW retry), `UartTransport`, `app_main` loop.
@@ -21,13 +21,13 @@ in the user's Linux VM or in CI.
   firmware guide §7.
 
 ## In progress
-* Verifying the firmware build (see Next task).
+* none
 
 ## Environment facts (2026-11-08)
 * Reference repo: `../isuzu-diagnostic-system` @ `67206fd` (read-only, untouched).
 * Windows: Qt 6.11.1 `mingw_64` (no Qt Serial Port), MinGW 13.1, Ninja, CMake 4.3.1.
-  ESP-IDF v5.5.4 (EIM) present but `export.ps1` fails: `No module named 'rich'` in
-  `C:\Espressif\python_env\idf5.5_py3.11_env`. Not repaired (user's tool environment).
+  ESP-IDF **v6.1** installed by the user (EIM): `C:/esp/v6.1/esp-idf`, activate with
+  `. C:/Espressif/tools/Microsoft.v6.1.PowerShell_profile.ps1`. Old v5.5.4 env is broken and unused.
 * User's Linux VM has ESP-IDF (version unconfirmed). Repo not yet transferred to the VM.
 
 ## Last successful build/test
@@ -35,19 +35,20 @@ in the user's Linux VM or in CI.
 cmake --preset host-debug && cmake --build --preset host-debug && ctest --preset host-debug
 → 100% passed: core_tests 48, protocol_tests 22, gateway_tests 26; 0 warnings (MinGW 13.1)
 ```
-Firmware: never built. CI workflow written but never run (nothing pushed).
+Firmware (ESP-IDF v6.1, Windows): `idf.py -B build-sim ... sdkconfig.defaults.simulation build` and
+`idf.py -B build-vehicle ... sdkconfig.defaults.vehicle build` → both "Project build complete", 0 warnings.
+CI workflow written but never run (nothing pushed).
 
 ## Known blockers
-* RK-09 firmware not compiled: needs VM build (`docs/build-and-release.md` §2) or a CI run (needs push).
+* RK-09 build verified on IDF v6.1 only; 6.0.2 CI run needs a push (user decision).
 * RK-08 Qt Serial Port missing (desktop serial transport).
 * RK-01 Physical CAN path unproven.
 
 ## Open questions
-* VM `idf.py --version` output; how the repo reaches the VM (shared folder / `git bundle` / push).
+* Whether to push so CI can verify 6.0.2 and the sanitizer host builds.
 
 ## Next task
-1. Build both firmware profiles in the VM (commands in `build-and-release.md` §2); fix compile errors.
-2. Then W5: desktop skeleton (Qt Widgets, loopback transport running gateway-core + SimulatedEcu).
+1. W5: desktop skeleton (Qt Widgets, loopback transport running gateway-core + SimulatedEcu).
 Flashing remains a separate step requiring explicit user permission.
 
 ## Last checkpoint commit
