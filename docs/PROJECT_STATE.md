@@ -27,6 +27,9 @@ a skeleton window work and are tested. Firmware (Phase 2) builds with ESP-IDF v6
   ResourceError, DTR/RTS low, bounded stop without terminate), port enumeration with CP210x marking,
   `GatewayClient::setTransport()`, failed-vs-lost connection distinction, port combo in MainWindow,
   `desktop_serial_tests` (7 hardware-free cases).
+* First ESP32 bench run (2026-11-08, user permission): simulation firmware (build d0636b0e) flashed to the
+  ESP32-D0WD-V3 on COM5; protocol verified with an independent Python client and with the C++ desktop path
+  (`bench_serial_tests`). TWAI/CAN not exercised (simulation profile).
 
 ## In progress
 * none
@@ -34,7 +37,7 @@ a skeleton window work and are tested. Firmware (Phase 2) builds with ESP-IDF v6
 ## Environment facts (2026-11-08)
 * Reference repo: `../isuzu-diagnostic-system` @ `67206fd` (read-only, untouched).
 * Windows: Qt 6.11.1 `mingw_64` incl. Serial Port (installed 2026-11-08), MinGW 13.1, Ninja, CMake 4.3.1.
-  COM ports seen: COM1, COM5 (COM5 presumably the ESP32 – never opened by tests).
+  COM5 = Silicon Labs CP210x (VID 10C4 PID EA60) = ESP32 DevKit; currently runs the SIMULATION firmware.
   ESP-IDF **v6.1** installed by the user (EIM): `C:/esp/v6.1/esp-idf`, activate with
   `. C:/Espressif/tools/Microsoft.v6.1.PowerShell_profile.ps1`. Old v5.5.4 env is broken and unused.
 * User's Linux VM has ESP-IDF (version unconfirmed). Repo not yet transferred to the VM.
@@ -44,7 +47,8 @@ a skeleton window work and are tested. Firmware (Phase 2) builds with ESP-IDF v6
 cmake --preset host-debug && cmake --build --preset host-debug && ctest --preset host-debug
 → 100% passed: core_tests 48, protocol_tests 22, gateway_tests 26; 0 warnings (MinGW 13.1)
 QT_ROOT=C:/Qt/6.11.1/mingw_64; cmake --preset windows-debug && cmake --build --preset windows-debug && ctest --preset windows-debug
-→ 5/5 executables pass (desktop_tests 11, desktop_serial_tests 7 cases), 0 warnings; app smoke-starts offscreen
+→ 6/6 pass (desktop_tests 11, desktop_serial_tests 7; bench_serial_tests skips without ISUZU_BENCH_PORT), 0 warnings
+ISUZU_BENCH_PORT=COM5 bench_serial_tests.exe → pass against the ESP32 (simulation firmware)
 ```
 Firmware (ESP-IDF v6.1, Windows): `idf.py -B build-sim ... sdkconfig.defaults.simulation build` and
 `idf.py -B build-vehicle ... sdkconfig.defaults.vehicle build` → both "Project build complete", 0 warnings.
@@ -63,8 +67,9 @@ CI workflow written but never run (nothing pushed).
    and failure injection.
 2. W7: services (DtcScanService with separate acquisition / enrichment / audit outcomes, LiveDataService
    with fresh/stale/unsupported/error states).
-3. Optional, needs explicit permission: flash the simulation firmware to the ESP32 (COM5?) and connect
-   the desktop over the real COM port – first hardware check of protocol + SerialTransport.
+3. Bench items still open: physical USB unplug while connected; desktop app GUI against COM5 (manual).
+4. CAN hardware path (vehicle firmware, transceiver electrical checks) only after the written
+   vehicle-validation plan and with explicit permission.
 Flashing remains a separate step requiring explicit user permission.
 
 ## Last checkpoint commit

@@ -43,6 +43,17 @@ The ROM/bootloader prints noise first; the desktop ignores it. The first protoco
 #EVT|0|BOOT|proto=1|source=SIMULATION*XXXX
 ```
 
+### Flashing from Windows (done once, 2026-11-08, with permission)
+
+```powershell
+. C:/Espressif/tools/Microsoft.v6.1.PowerShell_profile.ps1
+cd firmware/esp32-gateway
+idf.py -B build-sim -D SDKCONFIG=build-sim/sdkconfig -D "SDKCONFIG_DEFAULTS=sdkconfig.defaults;sdkconfig.defaults.simulation" -p COM5 flash
+```
+
+Check first that the port is the CP210x (`Get-CimInstance Win32_PnPEntity | ? Name -match 'COM'`) and that
+the board is not connected to a vehicle. Close the desktop app first – only one program can own the port.
+
 ## 3. Desktop (Qt 6, Windows)
 
 To be completed in Phase 3 (windeployqt packaging).

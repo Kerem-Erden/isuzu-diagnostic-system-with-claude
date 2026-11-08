@@ -59,6 +59,17 @@ On this Windows machine the host toolchain is Qt's MinGW: put
 `tests/unit/desktop/test_gateway_client.cpp` – 11 cases, GatewayClient over SimulationTransport
 (real gateway-core + SimulatedEcu). Labels `unit;desktop;simulation`. Requires the `windows-debug` preset.
 
+## Hardware bench (opt-in)
+
+`tests/hardware/test_serial_bench.cpp` (`bench_serial_tests`, labels `hardware;bench`) runs only when
+`ISUZU_BENCH_PORT` is set; otherwise it skips, so plain `ctest` never touches a device. It aborts if the
+gateway reports `source=VEHICLE`. Requires the **simulation** firmware on the ESP32:
+
+```powershell
+$env:ISUZU_BENCH_PORT = "COM5"
+ctest --preset windows-debug -L bench --output-on-failure
+```
+
 ## Known gaps
 
 * Sanitizers (ASan/UBSan) are not available with MinGW; CI runs the host tests on Linux GCC
