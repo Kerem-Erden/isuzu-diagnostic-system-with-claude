@@ -63,6 +63,17 @@ On this Windows machine the host toolchain is Qt's MinGW: put
 
 `tests/unit/desktop/test_live_data.cpp` – 9 cases: LiveDataService states over SimulatedEcu scenarios (NORMAL, UNSUPPORTED_VOLTAGE, SILENT, NEGATIVE_RESPONSE, unplug).
 
+`tests/unit/desktop/test_models.cpp` – 6 cases: view models and ConnectionController.
+
+### Visual review of the screens (simulation only)
+
+```powershell
+$env:QT_QPA_PLATFORM = "offscreen"; $env:QT_QPA_FONTDIR = "C:/Windows/Fonts"
+build/windows-debug/apps/desktop-qt/isuzu_diagnostic.exe --screenshots C:/temp/shots
+```
+
+Connects to the in-process SIMULATION only, reads DTCs, runs live data and saves `page-N.png` for every screen. `QStandardPaths` test mode keeps its audit rows out of the real profile. The offscreen platform picks a different font than the real Windows style.
+
 ## Hardware bench (opt-in)
 
 `tests/hardware/test_serial_bench.cpp` (`bench_serial_tests`, labels `hardware;bench`) runs only when

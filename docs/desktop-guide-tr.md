@@ -96,6 +96,30 @@ PID listesi `diag::obd::livePids()`'ten gelir; masaüstü ve firmware aynı tabl
 
 Bağlantı koparsa tüm Fresh değerler **hemen** Stale olur (zamanlayıcı beklenmez).
 
+## 4d. Ekranlar (Aşama 4)
+
+```mermaid
+flowchart LR
+  AW[AppWindow\nbanner + sidebar + status bar] --> CP[Connection]
+  AW --> DB[Dashboard]
+  AW --> LP[Live data]
+  AW --> DP[DTCs list+detail]
+  AW --> HP[History]
+  AW --> DV[Developer]
+  AW --> SP[Settings]
+  AW -. AppContext .-> SV[(ConnectionController, DtcScanService,\nLiveDataService, modeller, DB'ler)]
+```
+
+* `AppWindow` tüm servisleri **bir kez** oluşturur ve `AppContext` ile sayfalara verir. Sayfalar teşhis
+  mantığı içermez; yalnızca servisleri çağırır ve modelleri gösterir.
+* Modeller (`LiveDataModel`, `DtcListModel`, `EventLogModel` + `EventFilterModel`) widget olmadan test edilir.
+* Üstteki bant ve alttaki durum çubuğu her zaman gateway'in HELLO cevabını gösterir: kaynak, link,
+  firmware/protokol sürümü, CAN bitrate ve ID'ler, son hata.
+* Araç/motor profili yalnızca bilgi tabanındaki uygulamayı seçer. CAN adreslemesi firmware'de sabittir;
+  bu, Bağlantı ekranında açıkça yazar (R-19).
+* Geliştirici ekranındaki günlük 2000 kayıtla sınırlıdır; eski kayıtlar düşerken sayılır.
+* `--screenshots <klasör>`: yalnızca simülasyona bağlanır, her ekranın PNG görüntüsünü kaydeder (görsel inceleme).
+
 ## 5. Neden her şey sinyal?
 
 `send()` bir id döndürür; sonuç her zaman `replyReceived(reply)` sinyaliyle gelir. Bağlantı

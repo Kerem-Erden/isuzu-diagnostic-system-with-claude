@@ -11,7 +11,7 @@ Model/effort suggestions follow the policy in the master brief (§20).
 | W5 ✅ done 2026-11-08 (bench-verified with simulation firmware on ESP32; physical unplug test pending) | Desktop skeleton: CMake/Qt, transport (QSerialPort worker thread + loopback), GatewayClient | P1 | W2 | M | Qt Test: framing, correlation, timeout, unplug | requires Qt Serial Port module (RK-08) | Sonnet High |
 | W6 ✅ done 2026-11-08 | Desktop data: audit DB migrations, knowledge repository, Unknown DTC fallback | P1 | W5 | M | Qt Test with fixture DB and failure injection | — | Sonnet High |
 | W7 ✅ done 2026-11-08 (DtcScanService, LiveDataService) | Desktop services: LiveData, DtcScan (separated outcomes), Audit, Simulation | P1 | W5, W6, W3 | M | service tests | — | Sonnet High |
-| W8 | Qt Widgets UI: 8 screens, source banner, developer diagnostics | P2 | W7 | L | model tests + manual run | — | Sonnet Medium |
+| W8 ✅ done 2026-11-08 (7 screens, screenshot-reviewed in simulation) | Qt Widgets UI: 8 screens, source banner, developer diagnostics | P2 | W7 | L | model tests + manual run | — | Sonnet Medium |
 | W9 | Integration: desktop ↔ loopback ↔ gateway-core ↔ SimulatedEcu ↔ SQLite ↔ UI model | P1 | W7 | M | CTest integration label | — | Sonnet High |
 | W10 | CI workflow + windeployqt packaging | P2 | W5 | L | green CI run | — | Sonnet Medium |
 | W11 | Learning guides (TR) and remaining docs | P2 | each phase | L | review | — | Sonnet Medium |
