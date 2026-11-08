@@ -44,16 +44,34 @@ resynchronises on the next `#`.
 |---|---|---|---|
 | `HELLO` | — | none | `proto=1`, `fw=<semver>`, `build=<hash>`, `source=SIMULATION\|VEHICLE`, `bitrate=500000`, `tx=7E0`, `rx=7E8`, `ids=STD`, `mode04=0\|1`, `maxframe=256` |
 | `PING` | — | none | `pong` |
-| `STATUS` | — | none | `bus=ACTIVE\|WARNING\|PASSIVE\|BUS_OFF\|STOPPED\|LISTEN_ONLY`, `tec=`, `rec=`, `rxdrop=`, `live=0\|1` |
-| `READ_PID` | `<pid hex>` | one Mode 01 request | `pid=0C`, `value=`, `unit=` |
-| `LIVE_START` | `<period_ms>` (≥ 200) | starts cyclic polling | `period=` |
+| `STATUS` | — | none | `bus=ACTIVE\|WARNING\|PASSIVE\|BUS_OFF\|STOPPED\|LISTEN_ONLY`, `tec=`, `rec=`, `rxdrop=`, `live=0\|1`, `tx=0\|1`, `badframes=`, `crcerr=` |
+| `READ_PID` | `<pid hex>` (MVP PIDs only) | one Mode 01 request | `pid=0C`, `name=RPM`, `value=1726.00`, `unit=rpm` |
+| `LIVE_START` | `<period_ms>` (≥ 500) | cyclic polling: the 5 PIDs round-robin, one request every `period/5` ms | `period=` |
 | `LIVE_STOP` | — | stops polling | `live=0` |
-| `READ_DTC` | — | one Mode 03 request | `count=N`, `dtcs=P0087,P1093` (empty when N=0), `ecu=7E8` |
-| `CLEAR_DTC` | — | **one Mode 04 request** – only when `mode04=1` | `cleared=1` |
+| `READ_DTC` | — | one Mode 03 request | `count=N`, `dtcs=P0087,P1093` (empty when N=0) **or** `parts=K`, `ecu=7E8` |
+| `TRACE` | `0\|1` | enables `CAN_TX`/`CAN_RX` events | `trace=` |
+| `CLEAR_DTC` | — | **Mode 04 – not implemented in this build**: always `ERR\|CAPABILITY\|DISABLED\|00` | — |
+
+Session rules (implemented in `libs/gateway-core`, ADR-009):
+
+* `HELLO`, `PING`, `STATUS` work at any time. Every other command before `HELLO` returns
+  `ERR|PROTOCOL|INVALID_STATE|00` and transmits nothing.
+* Any valid request refreshes the session. After **5 s** without one, the session ends:
+  live polling stops, queued requests are dropped and the CAN controller returns to
+  listen-only. The desktop must send `PING` at least every 2 s while live data runs.
+* Only one user request (`READ_PID` / `READ_DTC`) can be outstanding; a second one returns
+  `ERR|INTERNAL|BUSY|00`. A user request issued during a live sample runs right after it.
+* Live polling stops itself (`EVT DIAG live state=STOPPED reason=no_response`) after 3
+  consecutive timeouts / TX failures, and skips a PID the ECU rejects with NRC 0x11/0x12/0x31.
 
 Side-effect commands (`READ_*`, `LIVE_START`, `CLEAR_DTC`) are de-duplicated: the
 firmware remembers the last 8 request ids; a repeated id returns
-`ERR|PROTOCOL|DUPLICATE_REQUEST` and nothing is transmitted on CAN.
+`ERR|PROTOCOL|DUPLICATE_REQUEST|00` and nothing is transmitted on CAN.
+
+Long DTC lists: if more than 30 codes are stored, the codes are sent first as
+`EVT|<seq>|DTC_PART|req=<id>|dtcs=...` events (30 per event), then the response
+`RES|<id>|OK|count=N|parts=K|ecu=7E8`. The desktop concatenates the parts in order and
+checks that the total equals `count`.
 
 ## 5. Events (firmware → desktop)
 
@@ -61,9 +79,10 @@ firmware remembers the last 8 request ids; a repeated id returns
 |---|---|---|
 | `BOOT` | `proto=1`, `source=` | Firmware (re)started — desktop must redo `HELLO` |
 | `LIVE` | `<NAME>`, `<value>`, `<unit>`, `t=<ms>` | One decoded PID sample |
-| `LIVE_ERR` | `<NAME>`, `<STAGE>`, `<CODE>`, `<detail>` | A cyclic PID request failed |
-| `CAN_TX` / `CAN_RX` | `id=7E0`, `dlc=8`, `data=0201...`, `t=<ms>` | Trace (only when tracing enabled) |
-| `DIAG` | `<category>`, `<key=value>...` | Counters, ISO-TP state, bus state changes |
+| `LIVE_ERR` | `<NAME>`, `<STAGE>`, `<CODE>`, `<detail hex>` | A cyclic PID request failed |
+| `DTC_PART` | `req=<id>`, `dtcs=...` | Part of a long Mode 03 result (see §4) |
+| `CAN_TX` / `CAN_RX` | `id=7E0`, `dlc=8`, `data=0201...`, `t=<ms>` | Trace (only when `TRACE 1`; RX only for the configured responder id) |
+| `DIAG` | `session\|live\|protocol`, `<key=value>...` | Session end, live stop reason, unparsable frames |
 
 ## 6. Error stages and codes
 

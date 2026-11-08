@@ -23,3 +23,12 @@ target_link_libraries(protocol_tests PRIVATE isuzu::serial_protocol)
 isuzu_set_warnings(protocol_tests)
 add_test(NAME protocol_tests COMMAND protocol_tests)
 set_tests_properties(protocol_tests PROPERTIES LABELS "unit;protocol")
+
+add_executable(gateway_tests
+    unit/test_main.cpp
+    unit/gateway/test_gateway.cpp)
+target_include_directories(gateway_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/unit ${CMAKE_CURRENT_SOURCE_DIR}/unit/gateway)
+target_link_libraries(gateway_tests PRIVATE isuzu::gateway_core)
+isuzu_set_warnings(gateway_tests)
+add_test(NAME gateway_tests COMMAND gateway_tests)
+set_tests_properties(gateway_tests PROPERTIES LABELS "unit;gateway;simulation")

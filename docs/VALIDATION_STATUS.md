@@ -16,7 +16,9 @@ Nothing in this repository is vehicle-validated. Every feature below is at most
 | Mode 03 decode for 0 / 1 / many DTCs, malformed rejection | AUTO | same run |
 | OBD transaction error stages (enqueue, TX completion, missing completion, RX timeout, NRC, NRC 0x78 with P2* and limit, wrong service, ISO-TP error), no retry | AUTO | same run |
 | Mode 04 codec (simulation-only translation unit) | AUTO | same run |
-| Any of the above against a real ECU | ASSUMED | not attempted |
+| Serial protocol v1: CRC-16 check value, framing, fragmentation, noise/boot-log resync, oversize discard, structured error round trip | AUTO | `ctest --preset host-debug` and `host-release` → 3/3 executables pass (core 48, protocol 22, gateway 25), MinGW 13.1, 2026-11-08 |
+| Gateway: listen-only boot, HELLO gate, 0/1/3/40 DTC (multi-frame + DTC_PART), NRC 0x22, NRC 0x78, RX timeout, no-ACK, malformed, bad sequence, duplicate id, Mode 04 disabled, live round robin, back-off, unsupported PID skip, session timeout | AUTO + SIM | same run (`gateway_tests`, SimulatedEcu at CAN-frame level) |
+| Any of the above against a real ECU or on an ESP32 | ASSUMED | not attempted |
 
 ## Inherited facts from the reference system (not re-verified here)
 

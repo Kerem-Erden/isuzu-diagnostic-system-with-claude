@@ -49,13 +49,13 @@ flowchart TB
 Rules: `diagnostic-core` depends on nothing but the C++17 standard library
 (`<cstdint>`, `<array>`, `<cstring>`); no heap, no exceptions, no I/O.
 
-## 3. Modules (to be filled as phases complete)
+## 3. Modules
 
 | Module | Phase | Guide |
 |---|---|---|
-| `libs/diagnostic-core` | 1 | `can-isotp-obd-guide-tr.md` |
-| `libs/serial-protocol` | 1 | `serial-protocol.md` |
-| `libs/gateway-core` | 2 | `firmware-guide-tr.md` |
+| `libs/diagnostic-core` | 1 ✅ | `can-isotp-obd-guide-tr.md` |
+| `libs/serial-protocol` | 1 ✅ | `serial-protocol.md` |
+| `libs/gateway-core` | 2 ✅ (host) | `firmware-guide-tr.md` |
 | `firmware/esp32-gateway` | 2 | `firmware-guide-tr.md` |
 | `apps/desktop-qt` | 3–4 | `desktop-guide-tr.md` |
 | `libs/dtc-knowledge` | 3 | `dtc-database.md` |

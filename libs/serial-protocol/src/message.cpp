@@ -129,7 +129,12 @@ FrameWriter& beginOk(FrameWriter& writer, std::uint32_t id) noexcept {
 
 FrameWriter& beginError(FrameWriter& writer, std::uint32_t id, const diag::Error& error) noexcept {
     writer.reset();
-    writer.field("RES").field(id).field("ERR").field(diag::toString(error.stage)).field(diag::toString(error.code));
+    writer.field("RES").field(id).field("ERR");
+    return appendError(writer, error);
+}
+
+FrameWriter& appendError(FrameWriter& writer, const diag::Error& error) noexcept {
+    writer.field(diag::toString(error.stage)).field(diag::toString(error.code));
     // detail as whole bytes of hex (NRC "22", sequence "0203"): byte-oriented values read naturally.
     unsigned digits = 2;
     while (digits < 8 && (error.detail >> (digits * 4)) != 0) digits += 2;

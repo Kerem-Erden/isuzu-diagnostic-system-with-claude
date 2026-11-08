@@ -123,15 +123,37 @@ FrameWriter& FrameWriter::field(std::string_view text) noexcept {
     return append(text);
 }
 
-FrameWriter& FrameWriter::field(std::uint32_t value) noexcept {
-    char digits[10];
+void FrameWriter::putDecimal(std::uint64_t value) noexcept {
+    char digits[20];
     std::size_t n = 0;
     do {
         digits[n++] = static_cast<char>('0' + value % 10);
         value /= 10;
     } while (value != 0);
-    separator();
     while (n > 0) put(digits[--n]);
+}
+
+void FrameWriter::putFixed2(double value) noexcept {
+    // Avoid printf("%f"): it is locale-dependent on the desktop and costly on the MCU.
+    if (!std::isfinite(value) || std::fabs(value) > 1.0e9) {
+        poisoned_ = true;
+        return;
+    }
+    if (value < 0) {
+        put('-');
+        value = -value;
+    }
+    const auto hundredths = static_cast<std::uint64_t>(std::llround(value * 100.0));
+    putDecimal(hundredths / 100);
+    const auto fraction = static_cast<unsigned>(hundredths % 100);
+    put('.');
+    put(static_cast<char>('0' + fraction / 10));
+    put(static_cast<char>('0' + fraction % 10));
+}
+
+FrameWriter& FrameWriter::field(std::uint32_t value) noexcept {
+    separator();
+    putDecimal(value);
     return *this;
 }
 
@@ -148,13 +170,7 @@ FrameWriter& FrameWriter::keyValue(std::string_view key, std::uint32_t value) no
     separator();
     append(key);
     put('=');
-    char digits[10];
-    std::size_t n = 0;
-    do {
-        digits[n++] = static_cast<char>('0' + value % 10);
-        value /= 10;
-    } while (value != 0);
-    while (n > 0) put(digits[--n]);
+    putDecimal(value);
     return *this;
 }
 
@@ -168,29 +184,17 @@ FrameWriter& FrameWriter::keyHex(std::string_view key, std::uint32_t value, unsi
 }
 
 FrameWriter& FrameWriter::fixed2(double value) noexcept {
-    // Avoid printf("%f"): it is locale-dependent on the desktop and costly on the MCU.
-    if (!std::isfinite(value) || std::fabs(value) > 1.0e9) {
-        poisoned_ = true;
-        return *this;
-    }
     separator();
-    if (value < 0) {
-        put('-');
-        value = -value;
-    }
-    const auto hundredths = static_cast<std::uint64_t>(std::llround(value * 100.0));
-    std::uint64_t whole = hundredths / 100;
-    const auto fraction = static_cast<unsigned>(hundredths % 100);
-    char digits[20];
-    std::size_t n = 0;
-    do {
-        digits[n++] = static_cast<char>('0' + whole % 10);
-        whole /= 10;
-    } while (whole != 0);
-    while (n > 0) put(digits[--n]);
-    put('.');
-    put(static_cast<char>('0' + fraction / 10));
-    put(static_cast<char>('0' + fraction % 10));
+    putFixed2(value);
+    return *this;
+}
+
+FrameWriter& FrameWriter::keyFixed2(std::string_view key, double value) noexcept {
+    if (key.empty()) poisoned_ = true;
+    separator();
+    append(key);
+    put('=');
+    putFixed2(value);
     return *this;
 }
 

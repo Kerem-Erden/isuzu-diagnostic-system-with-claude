@@ -58,6 +58,8 @@ FrameWriter& beginRequest(FrameWriter& writer, std::uint32_t id, std::string_vie
 FrameWriter& beginOk(FrameWriter& writer, std::uint32_t id) noexcept;
 /// Complete `#RES|<id>|ERR|<STAGE>|<CODE>|<detail hex>` (not finished – call finish()).
 FrameWriter& beginError(FrameWriter& writer, std::uint32_t id, const diag::Error& error) noexcept;
+/// Appends `<STAGE>|<CODE>|<detail hex>` (used by RES ERR and LIVE_ERR events).
+FrameWriter& appendError(FrameWriter& writer, const diag::Error& error) noexcept;
 /// Starts `#EVT|<seq>|<kind>`.
 FrameWriter& beginEvent(FrameWriter& writer, std::uint32_t sequence, std::string_view kind) noexcept;
 

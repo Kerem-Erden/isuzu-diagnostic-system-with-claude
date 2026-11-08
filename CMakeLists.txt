@@ -17,6 +17,7 @@ include(cmake/ProjectWarnings.cmake)
 
 add_subdirectory(libs/diagnostic-core)
 add_subdirectory(libs/serial-protocol)
+add_subdirectory(libs/gateway-core)
 
 if(ISUZU_BUILD_TESTS)
     enable_testing()

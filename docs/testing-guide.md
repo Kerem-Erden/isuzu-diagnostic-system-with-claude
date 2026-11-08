@@ -44,6 +44,16 @@ On this Windows machine the host toolchain is Qt's MinGW: put
 | Malformed payload | `mode01_rejects_wrong_service_pid_and_length`, `mode03_rejects_malformed_payloads`, `isotp_rejects_invalid_lengths` |
 | Buffer lifetime | not applicable to the pure core (no driver-borrowed buffers); covered in the firmware TWAI adapter phase |
 
+## Protocol and gateway coverage (Phase 1b / 2a)
+
+| Area | Tests |
+|---|---|
+| Serial framing, partial reads, multiple frames per read, malformed frame, resync, oversize | `tests/unit/serial_protocol/test_frame.cpp` (13 tests) |
+| Message parsing, structured errors, limits | `tests/unit/serial_protocol/test_message.cpp` (8 tests) |
+| Gateway end-to-end against `SimulatedEcu` (all scenarios) | `tests/unit/gateway/test_gateway.cpp` (25 tests) |
+
+`gateway_tests` carries the `simulation` label: these results are simulation evidence only.
+
 ## Known gaps
 
 * Sanitizers (ASan/UBSan) are not available with MinGW; CI runs the host tests on Linux GCC

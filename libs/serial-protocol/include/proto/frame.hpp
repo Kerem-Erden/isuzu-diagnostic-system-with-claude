@@ -108,6 +108,8 @@ public:
     FrameWriter& keyHex(std::string_view key, std::uint32_t value, unsigned digits) noexcept;
     /// Appends a fixed-point decimal field with 2 fractional digits (no locale, no printf).
     FrameWriter& fixed2(double value) noexcept;
+    /// Appends `key=<fixed2 value>`.
+    FrameWriter& keyFixed2(std::string_view key, double value) noexcept;
 
     /// Starts building an additional field character by character (for lists like "P0087,P1093").
     FrameWriter& beginField() noexcept;
@@ -120,6 +122,8 @@ public:
 private:
     void put(char c) noexcept;
     void separator() noexcept;
+    void putFixed2(double value) noexcept;
+    void putDecimal(std::uint64_t value) noexcept;
 
     char buffer_[kMaxFrameLength + 2]{};  // + '\n' and safety byte
     std::size_t used_ = 0;
