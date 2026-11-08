@@ -12,7 +12,7 @@ Likelihood / impact: L = low, M = medium, H = high.
 | RK-06 | CP210x driver blocks on close after unplug, freezing UI | M | H | QSerialPort on worker thread, UI talks via queued signals | Mitigated by design |
 | RK-07 | Knowledge DB schema drift or missing file | M | M | Startup validation, structured `KnowledgeError`, raw DTC still shown | Mitigated by design |
 | RK-08 | Qt Serial Port module missing | — | — | Installed by the user 2026-11-08 (Qt 6.11.1 MinGW); SerialTransport builds | **Closed** |
-| RK-09 | Local ESP-IDF is v6.1, target is 6.0.2 – API drift could hide 6.0.2-only build issues | M | L | Both profiles build cleanly with v6.1 locally; CI pins v6.0.2 | Mitigated locally; CI run pending |
+| RK-09 | Local ESP-IDF is v6.1, target is 6.0.2 | — | — | CI builds both profiles with 6.0.2 (run 42478500299) | **Closed** |
 | RK-10 | Knowledge content derived from OEM manuals may be inaccurate for a specific vehicle | M | M | UI wording "possible causes", source/application shown, never a definitive diagnosis | Accepted |
 | RK-11 | ECU uses a different physical address than 0x7E0/0x7E8 or requires 29-bit IDs | M | M | Configurable IDs; read-only passive capture first to observe responders | Open |
 | RK-12 | NRC 0x78 storm or endless pending responses | L | M | P2* deadline bounded, maximum pending count | Mitigated by design |

@@ -3,8 +3,8 @@
 _Last updated: 2026-11-08_
 
 ## Current phase
-Phases 0–6 delivered for the software/simulation MVP. Nothing is vehicle-validated. Open: W15–W18
-(bench/passive tools, log export, first CI run) before any vehicle step. Firmware (Phase 2) builds with ESP-IDF v6.1; not flashed.
+Phases 0–6 delivered for the software/simulation MVP; CI green. Nothing is vehicle-validated. Open: W15–W17
+(bench/passive tools, log export) before any vehicle step. Firmware (Phase 2) builds with ESP-IDF v6.1; not flashed.
 
 ## Completed
 * Phase 0 (`bc9a39f`): analysis, requirements, registers, ADR-001..011, protocol spec, knowledge DB
@@ -40,9 +40,12 @@ Phases 0–6 delivered for the software/simulation MVP. Nothing is vehicle-valid
 * Phase 4 (`2bcf387`): Qt Widgets shell (`AppWindow`: banner, sidebar, stack, status bar) and seven pages
   (Connection + profile + identity, Dashboard, Live data, DTC list/detail, History, Developer, Settings);
   `ConnectionController`, view models, `--screenshots` developer tour. `desktop_model_tests` 6 cases.
-* Phase 5/6 (this checkpoint): `tools/package-windows.ps1` (Release + tests + windeployqt, QSQLITE only,
+* Phase 5/6 (`d5f5035`): `tools/package-windows.ps1` (Release + tests + windeployqt, QSQLITE only,
   PACKAGE.txt) verified standalone; end-to-end integration test; documents `vehicle-validation-plan.md`,
   `known-limitations.md`, `troubleshooting.md`. New prerequisites W15–W18 recorded.
+* First push 2026-11-08 (user approved). CI run 1 failed: Linux GCC `-Wsign-conversion` in crc16.hpp; fixed in
+  `cb662b4` (reproduced in WSL Ubuntu 24.04). CI run 42478500299: **all 5 jobs green** (host GCC/Clang + sanitizers,
+  desktop Qt 6.8.3, firmware ESP-IDF 6.0.2 simulation + vehicle).
 
 ## In progress
 * none
@@ -69,17 +72,15 @@ Firmware (ESP-IDF v6.1, Windows): `idf.py -B build-sim ... sdkconfig.defaults.si
 CI workflow written but never run (nothing pushed).
 
 ## Known blockers
-* RK-09 build verified on IDF v6.1 only; 6.0.2 CI run needs a push (user decision).
 * RK-01 Physical CAN path unproven.
 
 ## Open questions
-* Whether to push so CI can verify 6.0.2 and the sanitizer host builds.
+* none
 
 ## Next task
-1. User decision: push to GitHub so CI runs (W18) – never pushed so far.
-2. W17 developer-log export + single READ_PID control (small, desktop only).
-3. W15 / W16 firmware bench self-test and passive monitor – then the electrical checklist with the user.
-4. Manual: GUI against COM5 incl. one USB unplug.
+1. W17 developer-log export + single READ_PID control (small, desktop only).
+2. W15 / W16 firmware bench self-test and passive monitor – then the electrical checklist with the user.
+3. Manual: GUI against COM5 incl. one USB unplug.
 
 ## Last checkpoint commit
 * see `git log --oneline -1`
