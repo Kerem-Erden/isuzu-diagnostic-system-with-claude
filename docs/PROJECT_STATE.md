@@ -3,8 +3,8 @@
 _Last updated: 2026-11-08_
 
 ## Current phase
-Phases 0–6 delivered for the software/simulation MVP; CI green. Nothing is vehicle-validated. Next physical step: bench self-test
-on the ESP32 + transceiver (user permission), then the electrical checklist. Firmware (Phase 2) builds with ESP-IDF v6.1; not flashed.
+Phases 0–6 delivered for the software/simulation MVP; CI green. Nothing is vehicle-validated. Hardware status: transceiver path FAILS the
+bench echo test; vehicle work is blocked until the electrical checklist finds the cause. Firmware (Phase 2) builds with ESP-IDF v6.1; not flashed.
 
 ## Completed
 * Phase 0 (`bc9a39f`): analysis, requirements, registers, ADR-001..011, protocol spec, knowledge DB
@@ -48,10 +48,13 @@ on the ESP32 + transceiver (user permission), then the electrical checklist. Fir
   desktop Qt 6.8.3, firmware ESP-IDF 6.0.2 simulation + vehicle).
 * W17 (`efd52e0`, CI green run 42496804516): developer-log CSV export with identity header and drop note; single Mode 01
   request control on the Developer page. desktop_model_tests now 7 cases.
-* W15/W16 (this checkpoint): passive monitor in gateway-core (`MONITOR_START/STOP`, `MON` events, transmit lock)
+* W15/W16 (`99cf5d8`, CI green run 42498094151): passive monitor in gateway-core (`MONITOR_START/STOP`, `MON` events, transmit lock)
   + Developer page controls; bench self-test firmware profile (`bench_app.cpp`, `TwaiAdapter` self-test flag),
   host-tested verdict logic `gw::bench`, `tools/bench_check.py` (safety refusals verified on COM5), desktop
   refuses `source=BENCH`. CI firmware matrix now includes `bench`. Never run on hardware.
+* First bench self-test on hardware (2026-11-08, user permission, no bus connected): CTX OK, TWAI loopback
+  PASS, **CRX stuck recessive (1/1/1)** – the reference-system fault persists in the transceiver path.
+  The loopback turned out to be controller-internal (docs corrected). Simulation firmware re-flashed afterwards.
 
 ## In progress
 * none
@@ -81,15 +84,15 @@ CI workflow written but never run (nothing pushed).
 * RK-01 Physical CAN path unproven.
 
 ## Open questions
-* none
+* Was the transceiver module connected/powered during the bench run on 2026-11-08?
 
 ## Next task
-1. With the user's permission: flash the **bench** profile to COM5 (transceiver attached, no bus) and run
-   `tools/bench_check.py COM5 --vehicle-disconnected`; record the result. Then the multimeter checklist
-   (`vehicle-validation-plan.md` §2.1) if it fails.
-2. Re-flash the simulation profile afterwards.
+1. User: confirm whether the SN65HVD230 module was attached and powered during the bench run (a floating
+   CRX also reads 1).
+2. User with a multimeter: `vehicle-validation-plan.md` §2.1 – VCC 3.3 V, **Rs pin low**, CTX/CRX idle levels,
+   GPIO21→D and GPIO22→R continuity. Then re-run the bench self-test (flash bench profile, run
+   `tools/bench_check.py`), re-flash simulation.
 3. Manual: GUI against COM5 incl. one USB unplug.
-4. Two-node bench bus (§2.2) needs a second CAN node (hardware the user may need to obtain).
 
 ## Last checkpoint commit
 * see `git log --oneline -1`

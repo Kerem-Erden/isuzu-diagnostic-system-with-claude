@@ -140,7 +140,9 @@ birkaç ms içinde gönderilir (ECU'nun N_Bs süresi 1000 ms).
   * Adım 1: CTX düz GPIO olarak 1→0→1 sürülür, CRX okunur. Sağlıklı bir SN65HVD230, D girişini R çıkışına
     yansıtır. Eski sistemdeki "CRX 1→1→1" belirtisi `RX_STUCK_RECESSIVE` olarak sınıflandırılır ve
     Rs pini (yüksekse transceiver standby'dadır) ipucu verilir.
-  * Adım 2: TWAI self-test + loopback ile tek frame gönderilip geri alınır.
+  * Adım 2: TWAI self-test + loopback ile tek frame gönderilip geri alınır. **Ölçüm (2026-11-08):** bu adım
+    CRX yansımasız iken de geçti; yani ESP32'de loopback denetleyicinin *içinde* döner. Bu adım yalnızca
+    denetleyici ve bitrate ayarını kanıtlar; transceiver'ı yalnızca Adım 1 değerlendirir.
   * Yorumlama `gw::bench::evaluate()` içindedir ve host'ta test edilir; ölçüm kodu (`bench_app.cpp`)
     yalnızca ESP32'de çalışır.
 * **Pasif izleme** gateway-core'dadır: `MONITOR_START` iken denetleyici listen-only kalır, her CAN ID için

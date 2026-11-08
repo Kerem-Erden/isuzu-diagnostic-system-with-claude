@@ -11,8 +11,9 @@
  *   An SN65HVD230 that is powered and in high-speed mode echoes its D input to R, so CRX must follow.
  *   This is exactly the test the reference system failed (CRX stayed 1 → 1 → 1).
  * Step 2 – TWAI self-test loopback: the controller sends one frame in self-test mode (no ACK needed)
- *   and must receive it back. On the ESP32 the frame travels out through the transceiver and back, so
- *   step 2 cannot pass if step 1 shows no echo.
+ *   and must receive it back. Measured on the ESP32-D0WD-V3 with ESP-IDF 6.1 (2026-11-08): the loopback
+ *   passed while step 1 showed no echo, i.e. the frame is looped back *inside* the controller. Step 2
+ *   therefore proves controller + bitrate configuration only; the transceiver path is judged by step 1.
  */
 
 #include <array>

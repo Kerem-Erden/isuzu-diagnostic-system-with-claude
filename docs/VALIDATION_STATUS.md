@@ -34,7 +34,10 @@ Nothing in this repository is vehicle-validated. Every feature below is at most
 | Bench verdict logic incl. reference symptom `1/1/1,0/0/1,1/1/1` → RX_STUCK_RECESSIVE; result frame format | AUTO | same run |
 | Bench firmware profile builds (and simulation/vehicle still build) | AUTO (build) | ESP-IDF v6.1 local, 0 warnings, 2026-11-08 |
 | bench_check.py refuses without --vehicle-disconnected and refuses a non-BENCH gateway | MANUAL | run against COM5 (simulation firmware, HELLO only), 2026-11-08 |
-| Bench self-test and passive monitor on real hardware | ASSUMED | not run (needs flashing bench firmware / vehicle access with permission) |
+| ESP32 TWAI controller + 500 kbit/s configuration (self-test loopback, one frame) | ESP32 | bench firmware on ESP32-D0WD-V3 (COM5), `tools/bench_check.py`, 2026-11-08, flashed with user permission, no bus connected: loopback PASS |
+| GPIO21 (CTX) drives and reads back correctly | ESP32 | same run: pad levels 1/0/1 follow the written levels |
+| SN65HVD230 echoes D→R (transceiver path) | **FAILED** | same run: CRX 1→1→1 while CTX 1→0→1 (`RX_STUCK_RECESSIVE`) – identical to the reference-system symptom. Whether the module was attached/powered during the run is to be confirmed by the user; electrical checklist (plan §2.1) pending |
+| Passive monitor on real hardware | ASSUMED | not run (needs the transceiver path and vehicle access with permission) |
 | Developer-log CSV export (RFC 4180 quoting, ISO 8601 ms timestamps, identity header, drop note) | AUTO | desktop_model_tests `eventLogExportsQuotedCsv`, 2026-11-08; file dialog path not automated |
 | End-to-end chain in simulation (connect → audit session → multi-frame Mode 03 → knowledge → audit → model → live data → injected NRC scan audited → unplug) | AUTO + SIM | `ctest --preset windows-debug -L integration` → pass; full suite 10/10, 2026-11-08 |
 | Windows Release package self-contained | MANUAL | `tools/package-windows.ps1` (tests 9/9 in Release), unpacked folder run with PATH=System32 only, screenshot tour shows knowledge + audit working, 2026-11-08 |

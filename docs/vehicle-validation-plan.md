@@ -27,7 +27,7 @@ The current firmware cannot yet support every step. These are prerequisites, tra
 
 | Tool | Why | Status |
 |---|---|---|
-| W15 Bench self-test mode (TWAI internal loopback + CTX/CRX level check, transceiver disconnected from any bus) | Distinguishes controller, wiring and transceiver faults; the reference system's CRX stayed `1→1→1` | **implemented 2026-11-08** (`bench` firmware profile + `tools/bench_check.py`); never run on hardware |
+| W15 Bench self-test mode (TWAI internal loopback + CTX/CRX level check, transceiver disconnected from any bus) | Distinguishes controller, wiring and transceiver faults; the reference system's CRX stayed `1→1→1` | **implemented and run once 2026-11-08**: GPIO `RX_STUCK_RECESSIVE`, loopback PASS |
 | W16 Passive monitor (listen-only, per-ID frame counters and DLC, bounded) | Proves the RX path and the bitrate on the real bus without transmitting | **implemented 2026-11-08** (`MONITOR_START/STOP`, Developer page "Passive monitor"); host-tested only |
 | W17 Developer-log export (CSV/JSON with timestamps) and a single-request control (one `READ_PID <pid>` without starting live polling) on the Developer page | Raw TX/RX evidence; §4 needs exactly one Mode 01 request | **implemented 2026-11-08** (Developer page: "Send once", "Export CSV…") |
 
@@ -59,6 +59,11 @@ python tools/bench_check.py COM5 --vehicle-disconnected --csv bench-results.csv
 | `gpio=RX_STUCK_DOMINANT` | R held low: CANH/CANL short or bus held dominant |
 | `gpio=TX_PIN_NOT_FOLLOWING` | GPIO21 shorted or driven by something else |
 | `gpio=PASS`, `loopback=LOOPBACK_FAILED` | pins fine; check bitrate / TWAI configuration (`lberr` names the stage) |
+| `gpio=RX_STUCK_RECESSIVE`, `loopback=PASS` | controller and bitrate are fine (the ESP32 loopback is internal); the fault is in the transceiver path – **result of the first bench run, 2026-11-08** |
+
+Note: the loopback step does not involve the transceiver (measured 2026-11-08), so only the GPIO step
+judges the SN65HVD230. A floating CRX (module not connected) also reads 1 – record whether the module was
+attached and powered.
 
 Re-flash the simulation or vehicle profile afterwards; the bench firmware cannot be used for diagnostics.
 
