@@ -30,13 +30,13 @@ resynchronises on the next `#`.
 ```
 #REQ|<id>|<COMMAND>[|<arg>...]*CRC
 #RES|<id>|OK[|<key=value>...]*CRC
-#RES|<id>|ERR|<STAGE>|<CODE>[|<detail>]*CRC
+#RES|<id>|ERR|<STAGE>|<CODE>|<detail>*CRC
 #EVT|<seq>|<KIND>[|<field>...]*CRC
 ```
 
 * `<id>`: decimal `1..2147483647`. The desktop starts each connection from a random
   value and increments; the firmware echoes it. A response is matched only by id.
-* `<seq>`: firmware event counter (wraps at 2^31-1). A gap means events were dropped.
+* `<seq>`: firmware event counter starting at 0 (wraps after 2^31-1). A gap means events were dropped.
 
 ## 4. Commands (desktop → firmware)
 
@@ -69,15 +69,15 @@ firmware remembers the last 8 request ids; a repeated id returns
 
 Stages mirror `diag::Stage` (ADR-005): `CAN_ENQUEUE`, `CAN_TX`, `CAN_BUS`,
 `RX_TIMEOUT`, `RESPONDER`, `ISOTP`, `NRC`, `OBD_DECODE`, `SERIAL`, `PROTOCOL`,
-`CAPABILITY`, `INTERNAL`. `detail` for `NRC` is the NRC byte in hex (e.g. `22`).
+`CAPABILITY`, `INTERNAL`. `detail` is mandatory, upper-case hex padded to whole bytes (`00`, `22`, `0203`). For `NRC` it is the NRC byte.
 
-## 7. Examples (CRC values computed by the codec tests)
+## 7. Examples (valid CRC values)
 
 ```
-#REQ|41|READ_DTC*xxxx
-#RES|41|OK|count=2|dtcs=P0087,P1093|ecu=7E8*xxxx
-#RES|42|ERR|NRC|NEGATIVE_RESPONSE|22*xxxx
-#EVT|7|LIVE|RPM|1726.00|rpm|t=120345*xxxx
+#REQ|41|READ_DTC*AE0F
+#RES|41|OK|count=2|dtcs=P0087,P1093|ecu=7E8*C267
+#RES|42|ERR|NRC|NEGATIVE_RESPONSE|22*59FC
+#EVT|7|LIVE|RPM|1726.00|rpm|t=120345*F8E3
 ```
 
 See `tests/unit/serial_protocol` for exact frames with valid CRCs.

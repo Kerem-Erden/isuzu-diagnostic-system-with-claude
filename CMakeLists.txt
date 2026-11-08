@@ -16,6 +16,7 @@ option(ISUZU_WARNINGS_AS_ERRORS "Treat compiler warnings as errors in project ta
 include(cmake/ProjectWarnings.cmake)
 
 add_subdirectory(libs/diagnostic-core)
+add_subdirectory(libs/serial-protocol)
 
 if(ISUZU_BUILD_TESTS)
     enable_testing()
