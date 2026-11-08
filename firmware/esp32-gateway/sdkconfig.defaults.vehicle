@@ -1,0 +1,8 @@
+# VEHICLE profile: TWAI boots listen-only, transmits only for desktop requests.
+# Mode 04 is not available in any profile. Flash/connect only with explicit permission and
+# after the bench checks in docs/vehicle-validation-plan.md.
+CONFIG_ISUZU_GATEWAY_VEHICLE=y
+CONFIG_ISUZU_CAN_BITRATE_500K=y
+CONFIG_ISUZU_ECU_REQUEST_ID=0x7E0
+CONFIG_ISUZU_TWAI_TX_GPIO=21
+CONFIG_ISUZU_TWAI_RX_GPIO=22

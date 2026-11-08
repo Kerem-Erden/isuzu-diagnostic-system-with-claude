@@ -19,6 +19,8 @@ Nothing in this repository is vehicle-validated. Every feature below is at most
 | Serial protocol v1: CRC-16 check value, framing, fragmentation, noise/boot-log resync, oversize discard, structured error round trip | AUTO | `ctest --preset host-debug` and `host-release` → 3/3 executables pass (core 48, protocol 22, gateway 25), MinGW 13.1, 2026-11-08 |
 | Gateway: listen-only boot, HELLO gate, 0/1/3/40 DTC (multi-frame + DTC_PART), NRC 0x22, NRC 0x78, RX timeout, no-ACK, malformed, bad sequence, duplicate id, Mode 04 disabled, live round robin, back-off, unsupported PID skip, session timeout | AUTO + SIM | same run (`gateway_tests`, SimulatedEcu at CAN-frame level) |
 | Any of the above against a real ECU or on an ESP32 | ASSUMED | not attempted |
+| Firmware ESP-IDF project (`firmware/esp32-gateway`) compiles with ESP-IDF 6.0.2 | ASSUMED | code written 2026-11-08; **never compiled** (local IDF env broken; VM/CI build pending) |
+| TwaiAdapter listen-only boot, TX slot lifetime, ISR → queue | ASSUMED | design reviewed only; requires ESP32 bench test |
 
 ## Inherited facts from the reference system (not re-verified here)
 

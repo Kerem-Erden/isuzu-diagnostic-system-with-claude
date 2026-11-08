@@ -14,5 +14,11 @@ function(isuzu_set_warnings target)
         if(ISUZU_WARNINGS_AS_ERRORS)
             target_compile_options(${target} PRIVATE -Werror)
         endif()
+        if(ISUZU_SANITIZE)
+            # AddressSanitizer + UndefinedBehaviorSanitizer (Linux CI; not available with MinGW).
+            target_compile_options(${target} PRIVATE -fsanitize=address,undefined -fno-omit-frame-pointer
+                                                     -fno-sanitize-recover=all)
+            target_link_options(${target} PRIVATE -fsanitize=address,undefined)
+        endif()
     endif()
 endfunction()

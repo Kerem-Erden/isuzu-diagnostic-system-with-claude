@@ -1,0 +1,16 @@
+# Common defaults for every profile. Profile files are layered on top:
+#   idf.py -D SDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.defaults.simulation" build
+CONFIG_IDF_TARGET="esp32"
+
+# The gateway objects are static; the task still needs room for frame buffers on the stack.
+CONFIG_ESP_MAIN_TASK_STACK_SIZE=8192
+
+# 1 kHz tick so the cooperative loop can poll every 1–2 ms (ISO-TP flow control latency).
+CONFIG_FREERTOS_HZ=1000
+
+# UART0 carries both the ESP-IDF console and protocol frames. Keep logs quiet; the protocol
+# parser ignores anything that is not a CRC-valid '#' frame anyway (ADR-004).
+CONFIG_BOOTLOADER_LOG_LEVEL_WARN=y
+CONFIG_LOG_DEFAULT_LEVEL_WARN=y
+CONFIG_ESP_CONSOLE_UART_DEFAULT=y
+CONFIG_ESP_CONSOLE_UART_BAUDRATE=115200

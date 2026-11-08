@@ -77,6 +77,9 @@ public:
     void onTxComplete(bool success) noexcept override;
     /// Timeouts, scheduling, completion handling.
     void poll(std::uint64_t nowUs) noexcept;
+    /// Emits `EVT|<seq>|DIAG|<category>|<key>=<value>` for platform problems the gateway logic
+    /// cannot see itself (e.g. TWAI driver initialisation failed). Values must be field-safe.
+    void reportDiagnostic(std::string_view category, std::string_view key, std::string_view value) noexcept;
 
     bool sessionActive() const noexcept { return sessionActive_; }
     bool liveActive() const noexcept { return liveActive_; }

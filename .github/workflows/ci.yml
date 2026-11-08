@@ -1,0 +1,51 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  host-tests:
+    name: Host unit tests (${{ matrix.compiler }}, sanitizers)
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        compiler: [gcc, clang]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Ninja
+        run: sudo apt-get update && sudo apt-get install -y ninja-build
+      - name: Configure
+        run: >
+          cmake --preset host-debug
+          -DISUZU_SANITIZE=ON
+          -DCMAKE_CXX_COMPILER=${{ matrix.compiler == 'gcc' && 'g++' || 'clang++' }}
+      - name: Build
+        run: cmake --build --preset host-debug
+      - name: Test
+        run: ctest --preset host-debug
+
+  firmware:
+    name: Firmware build (ESP-IDF 6.0.2, ${{ matrix.profile }})
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        profile: [simulation, vehicle]
+    steps:
+      - uses: actions/checkout@v4
+      # Build only. CI never flashes or talks to hardware.
+      - uses: espressif/esp-idf-ci-action@v1
+        with:
+          esp_idf_version: v6.0.2
+          target: esp32
+          path: firmware/esp32-gateway
+          command: >
+            idf.py -B build-ci-${{ matrix.profile }}
+            -D SDKCONFIG=build-ci-${{ matrix.profile }}/sdkconfig
+            -D "SDKCONFIG_DEFAULTS=sdkconfig.defaults;sdkconfig.defaults.${{ matrix.profile }}"
+            build

@@ -1,0 +1,61 @@
+menu "Isuzu diagnostic gateway"
+
+    choice ISUZU_GATEWAY_SOURCE
+        prompt "Diagnostic data source"
+        default ISUZU_GATEWAY_SIMULATION
+        help
+            SIMULATION runs the deterministic SimulatedEcu on the ESP32; the TWAI controller is
+            not initialised and nothing is transmitted on CANH/CANL.
+            VEHICLE drives the TWAI controller. It boots listen-only and transmits only while a
+            desktop session requests data (ADR-009).
+
+        config ISUZU_GATEWAY_SIMULATION
+            bool "Simulation (no CAN transmissions)"
+        config ISUZU_GATEWAY_VEHICLE
+            bool "Vehicle (11-bit ISO 15765-4, one physically addressed ECU)"
+    endchoice
+
+    config ISUZU_SIM_SCENARIO
+        string "Simulated ECU scenario"
+        depends on ISUZU_GATEWAY_SIMULATION
+        default "NORMAL"
+        help
+            One of NORMAL, NO_DTCS, SINGLE_DTC, MANY_DTCS, UNKNOWN_DTC, SILENT,
+            NEGATIVE_RESPONSE, RESPONSE_PENDING, MALFORMED_DTC, BAD_SEQUENCE, NO_ACK,
+            UNSUPPORTED_VOLTAGE. Unknown names fall back to NORMAL.
+
+    choice ISUZU_CAN_BITRATE_CHOICE
+        prompt "CAN bitrate"
+        default ISUZU_CAN_BITRATE_500K
+        help
+            ISO 15765-4 allows 250 or 500 kbit/s. Passive observation on the test vehicle showed
+            ~500 kbit/s traffic. The bitrate is never probed by transmitting.
+        config ISUZU_CAN_BITRATE_500K
+            bool "500 kbit/s"
+        config ISUZU_CAN_BITRATE_250K
+            bool "250 kbit/s"
+    endchoice
+
+    config ISUZU_CAN_BITRATE
+        int
+        default 500000 if ISUZU_CAN_BITRATE_500K
+        default 250000 if ISUZU_CAN_BITRATE_250K
+
+    config ISUZU_ECU_REQUEST_ID
+        hex "Physical ECU request ID (response = request + 8)"
+        range 0x7E0 0x7E7
+        default 0x7E0
+
+    config ISUZU_TWAI_TX_GPIO
+        int "TWAI TX GPIO (to SN65HVD230 D / CTX)"
+        range 0 33
+        default 21
+
+    config ISUZU_TWAI_RX_GPIO
+        int "TWAI RX GPIO (from SN65HVD230 R / CRX)"
+        range 0 39
+        default 22
+
+    # There is intentionally no option for OBD Mode 04 (clear DTCs). See ADR-008.
+
+endmenu

@@ -293,6 +293,12 @@ TEST_CASE(gateway_survives_noise_and_reports_bad_frames) {
     CHECK(host.gateway.serialCounters().badChecksum == 1);
 }
 
+TEST_CASE(gateway_reports_platform_diagnostics) {
+    Host host;
+    host.gateway.reportDiagnostic("can_init", "error", "ESP_ERR_INVALID_STATE");
+    CHECK(host.hasBodyContaining("DIAG|can_init|error=ESP_ERR_INVALID_STATE"));
+}
+
 TEST_CASE(gateway_status_reports_bus_counters) {
     Host host;
     host.request(1, "STATUS");

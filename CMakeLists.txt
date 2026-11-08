@@ -12,6 +12,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 option(ISUZU_BUILD_TESTS "Build unit and integration tests" ON)
 option(ISUZU_BUILD_DESKTOP "Build the Qt 6 desktop application (requires Qt)" OFF)
 option(ISUZU_WARNINGS_AS_ERRORS "Treat compiler warnings as errors in project targets" ON)
+option(ISUZU_SANITIZE "Build project targets with ASan/UBSan (GCC/Clang on Linux)" OFF)
 
 include(cmake/ProjectWarnings.cmake)
 

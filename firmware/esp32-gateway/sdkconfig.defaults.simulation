@@ -1,0 +1,3 @@
+# SIMULATION — NO VEHICLE DATA. TWAI is not initialised; safe with or without a transceiver.
+CONFIG_ISUZU_GATEWAY_SIMULATION=y
+CONFIG_ISUZU_SIM_SCENARIO="NORMAL"

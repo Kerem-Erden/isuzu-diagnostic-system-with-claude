@@ -78,7 +78,7 @@ private:
     diag::IsoTpConfig ids_;
     CanEventSink* sink_ = nullptr;
     EcuScenario scenario_ = EcuScenario::Normal;
-    BusStatus status_{BusState::ListenOnly, 0, 0, 0};
+    BusStatus status_{BusState::ListenOnly, 0, 0, 0, 0};
     bool transmitEnabled_ = false;
     std::uint64_t nowUs_ = 0;
 

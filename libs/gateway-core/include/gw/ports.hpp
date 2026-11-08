@@ -30,7 +30,8 @@ struct BusStatus {
     BusState state = BusState::Stopped;
     std::uint16_t tec = 0;          ///< transmit error counter (+8 per failed TX, -1 per success)
     std::uint16_t rec = 0;          ///< receive error counter
-    std::uint32_t rxDropped = 0;    ///< frames lost because the RX queue was full
+    std::uint32_t rxDropped = 0;    ///< driver events (RX frames / TX completions) lost to a full queue
+    std::uint32_t busErrors = 0;    ///< bit/stuff/form/ACK error events reported by the controller
 };
 
 /// Outgoing CAN side. Implementations must copy the frame: the caller's object may be reused.

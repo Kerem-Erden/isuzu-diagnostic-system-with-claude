@@ -109,6 +109,7 @@ diag::Error SimulatedEcu::enqueue(const diag::CanFrame& frame) noexcept {
     if (scenario_ == EcuScenario::NoAck) {
         // ISO 11898: a transmitter that sees no ACK increments TEC by 8.
         status_.tec = static_cast<std::uint16_t>(status_.tec + 8);
+        ++status_.busErrors;
         if (status_.tec > 255) status_.state = BusState::BusOff;
         else if (status_.tec > 127) status_.state = BusState::Passive;
         else if (status_.tec > 95) status_.state = BusState::Warning;

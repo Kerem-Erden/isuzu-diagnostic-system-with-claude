@@ -1,8 +1,8 @@
 # Firmware Rehberi (gateway-core + ESP32)
 
-> Durum: `libs/gateway-core` tamamlandı ve host üzerinde test edildi. ESP-IDF projesi
-> (`firmware/esp32-gateway`, TWAI adapter, UART) bir sonraki aşamada yazılacak; bu bölüm o
-> zaman genişletilecek.
+> Durum: `libs/gateway-core` host üzerinde test edildi. ESP-IDF projesi
+> (`firmware/esp32-gateway`) yazıldı ancak **henüz derlenmedi** (yerel IDF kurulumu bozuk;
+> derleme VM veya CI'da yapılacak). Bölüm 7'ye bakın.
 
 **Okuma sırası:** `gw/ports.hpp` → `gw/gateway.hpp` → `src/gateway.cpp` →
 `gw/simulated_ecu.hpp` → `tests/unit/gateway/test_gateway.cpp`.
@@ -85,7 +85,53 @@ değerler zamanın deterministik fonksiyonudur (ör. RPM 20 s'de 750↔2500 üç
 > SIMULATION — NO VEHICLE DATA: Simülatörün ürettiği hiçbir değer gerçek araç verisi değildir.
 > HELLO cevabındaki `source=SIMULATION` bunu masaüstüne bildirir.
 
-## 6. Kendin dene
+## 7. ESP-IDF projesi (`firmware/esp32-gateway`)
+
+| Dosya | Görev |
+|---|---|
+| `components/isuzu_shared/CMakeLists.txt` | `libs/` altındaki üç kütüphaneyi ESP-IDF bileşeni olarak derler (kopya yok) |
+| `main/Kconfig.projbuild` | Kaynak seçimi (SIMULATION/VEHICLE), senaryo, bitrate, ECU ID, pinler. **Mode 04 seçeneği yok.** |
+| `main/twai_adapter.*` | `gw::CanPort` → `esp_twai_onchip` sürücüsü |
+| `main/uart_transport.*` | UART0, 115200 8N1 |
+| `main/app_main.cpp` | Nesneleri bağlar ve tek döngüyü çalıştırır |
+| `sdkconfig.defaults*` | Ortak ayarlar + profil dosyaları |
+
+### TwaiAdapter'daki kritik kararlar
+
+1. **ISR yalnızca kopyalar.** `onRxDone` frame'i yerel bir buffer'a alır, ISR içinde zaman
+   damgası basar ve statik bir FreeRTOS kuyruğuna koyar. Log, `new`, mutex yoktur. Kuyruk doluysa
+   yalnızca `rxDropped_` artar (`STATUS rxdrop=`).
+2. **TX buffer ömrü (lifetime).** `twai_node_transmit()` frame'i *ödünç alır*; sürücü TX-done
+   callback'ine kadar o belleği okuyabilir. Bu yüzden frame'ler 4 sabit slotta tutulur; slot yalnızca
+   callback'te veya node silindiğinde serbest kalır. (Eski sistemde zaman aşımına uğrayan bir TX'in
+   stack belleğinin tekrar kullanılması hatası vardı.)
+3. **Listen-only ↔ normal geçişi.** On-chip sürücüde listen-only bir *oluşturma* parametresidir;
+   geçiş için node silinip yeniden oluşturulur. Bu yalnızca oturum/istek sınırlarında olur.
+4. **TX pini listen-only'de de atanır.** Pin atanmazsa SN65HVD230'un D girişi boşta (floating)
+   kalabilir ve hattı dominant'a çekebilir. Controller listen-only'de pini recessive tutar.
+5. **`fail_retry_cnt = 0`.** Donanım otomatik yeniden gönderim yapmaz; ACK alınamayan frame bir
+   kez başarısız raporlanır (TEC'in sürekli artmasını engeller).
+
+### Döngü
+
+```text
+for (;;) {
+  UART'tan ≤ 1 ms bekle → gateway.onSerialBytes()
+  SIM: ecu.poll()   |   VEHICLE: twai.drainEvents(gateway)
+  gateway.poll()
+}
+```
+
+`CONFIG_FREERTOS_HZ=1000` sayesinde 1 ms bekleme gerçekten 1 ms'dir; FF geldikten sonra FC en geç
+birkaç ms içinde gönderilir (ECU'nun N_Bs süresi 1000 ms).
+
+### Bilinen sınırlamalar
+
+* Bus-off'tan otomatik kurtarma (`twai_node_recover`) yok; `STATUS bus=BUS_OFF` görünür, bir sonraki
+  listen-only/normal geçişinde node yeniden oluşturulur.
+* Kayıp TX completion olayı da `rxdrop` sayacına yazılır (tek sayaç, iki neden).
+
+## 8. Kendin dene
 
 1. `SimulatedEcu::sendConsecutiveFrames` içinde `BadSequence` senaryosunun başlangıç
    sırasını 2 yerine 0 yap. `gateway_reports_malformed_and_bad_sequence_dtc_responses`

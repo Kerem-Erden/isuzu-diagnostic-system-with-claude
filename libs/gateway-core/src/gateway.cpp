@@ -143,6 +143,10 @@ void Gateway::poll(std::uint64_t nowUs) noexcept {
     updateTransmitState();
 }
 
+void Gateway::reportDiagnostic(std::string_view category, std::string_view key, std::string_view value) noexcept {
+    emit(beginEvent("DIAG").field(category).keyValue(key, value).finish());
+}
+
 void Gateway::endSession() noexcept {
     sessionActive_ = false;
     if (liveActive_) stopLive("session_timeout");
@@ -309,6 +313,7 @@ void Gateway::sendStatus(std::uint32_t id) noexcept {
              .keyValue("tec", bus.tec)
              .keyValue("rec", bus.rec)
              .keyValue("rxdrop", bus.rxDropped)
+             .keyValue("buserr", bus.busErrors)
              .keyValue("live", liveActive_ ? 1u : 0u)
              .keyValue("tx", transmitEnabled_ ? 1u : 0u)
              .keyValue("badframes", counters_.badFrames)
