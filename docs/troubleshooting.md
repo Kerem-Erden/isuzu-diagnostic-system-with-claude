@@ -31,6 +31,14 @@ bakın: sorunun hangi katmanda olduğunu söyler.
 | `NRC/NEGATIVE_RESPONSE/31` | PID/servis desteklenmiyor | Canlı veride "unsupported" olarak işaretlenir |
 | `OBD_DECODE/MALFORMED_PAYLOAD` | Cevap uzunluğu/sayısı tutmuyor | Trace'i kaydedin, rapor edin |
 
+## 2b. Ölçüm sırasında dikkat
+
+* Pin 8 (Rs) **CAN modülündeki** SN65HVD230 çipinin bacağıdır, ESP32 kartında değil. ESP32 kartının **EN** pinini
+  GND'ye bağlamak kartı resette tutar: güç LED'i yanar ama kart cevap vermez. Jumper'ı çekip EN'e basınca düzelir
+  (2026-11-08'de yaşandı, zararsız).
+* Bench self-test (`tools/bench_check.py`) yalnızca **bench** firmware'i ile çalışır ve CANH/CANL hiçbir hatta
+  bağlı olmamalıdır.
+
 ## 3. Masaüstü verileri
 
 | Belirti | Neden | Çözüm |

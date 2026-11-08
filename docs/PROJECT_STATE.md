@@ -55,6 +55,10 @@ bench echo test; vehicle work is blocked until the electrical checklist finds th
 * First bench self-test on hardware (2026-11-08, user permission, no bus connected): CTX OK, TWAI loopback
   PASS, **CRX stuck recessive (1/1/1)** – the reference-system fault persists in the transceiver path.
   The loopback turned out to be controller-internal (docs corrected). Simulation firmware re-flashed afterwards.
+* Multimeter session 2026-11-08 evening (user): VCC 3.34 V, wiring D21→CTX / D22→CRX correct and not swapped,
+  Rs (chip pin 8) 0.3 V → **Rs is not the cause**. A 3.30 V "pin 8" reading was the ESP32 EN pin. Stopped for
+  the day; the user wants to restart the measurements from step 1 tomorrow.
+* **Board state at stop: COM5 runs the BENCH firmware** (re-flash simulation before using the desktop app).
 
 ## In progress
 * none
@@ -85,12 +89,20 @@ CI workflow written but never run (nothing pushed).
 
 ## Open questions
 * none (user confirmed 2026-11-08: SN65HVD230 was connected and powered during the bench run)
+* Why does CRX not follow CTX although VCC, wiring and Rs are correct? (measurements 3–4 above)
 
-## Next task
-1. User with a multimeter: `vehicle-validation-plan.md` §2.1 – VCC 3.3 V, **Rs pin low**, CTX/CRX idle levels,
-   GPIO21→D and GPIO22→R continuity. Then re-run the bench self-test (flash bench profile, run
-   `tools/bench_check.py`), re-flash simulation.
-2. Manual: GUI against COM5 incl. one USB unplug.
+## Next task (resume here – user restarts from step 1)
+All measurements are on the **CAN module** (SN65HVD230 board), never on ESP32 header pins.
+1. DCV 20, USB on, black probe GND: module 3V3 (≈3.3 V), chip pin 8 / Rs (≈0 V), CTX idle (≈3.3 V),
+   CRX idle (≈3.3 V), CANH and CANL idle (≈2.3–2.5 V each).
+2. Buzzer, USB off: ESP32 D21→CTX beeps, D22→CRX beeps, D21→CRX silent.
+3. Ω 200, USB off: CANH–CANL ≈120 Ω (0–5 Ω = short → cause found).
+4. Manual dominant test: press ESP32 EN once, jumper **module CTX → module GND**, measure CRX (→≈0 V),
+   CANH (→≈3–3.5 V), CANL (→≈1–1.5 V); remove jumper.
+   - CANH/CANL move but CRX stays 3.3 V → receiver side defective, replace module.
+   - CANH/CANL do not move → driver defective (or CANH/CANL short).
+   - all move as expected → chip OK; investigate how the ESP32 drives D21 (firmware side).
+5. Re-run bench self-test (`tools/bench_check.py COM5 --vehicle-disconnected`), then re-flash simulation.
 
 ## Last checkpoint commit
 * see `git log --oneline -1`

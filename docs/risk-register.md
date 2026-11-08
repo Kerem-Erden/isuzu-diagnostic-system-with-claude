@@ -4,7 +4,7 @@ Likelihood / impact: L = low, M = medium, H = high.
 
 | ID | Risk | L | I | Mitigation | Owner / status |
 |---|---|---|---|---|---|
-| RK-01 | Physical CAN path (SN65HVD230 ↔ ESP32) is faulty; no ECU response ever arrives | H | H | Bench self-test 2026-11-08 reproduced it: CTX OK, TWAI controller OK (loopback PASS), **CRX does not follow CTX**. Next: multimeter checklist (VCC, Rs, CRX wiring) in `vehicle-validation-plan.md` §2.1; no vehicle TX until the GPIO step passes | **Open – confirmed on hardware** |
+| RK-01 | Physical CAN path (SN65HVD230 ↔ ESP32) is faulty; no ECU response ever arrives | H | H | Bench self-test 2026-11-08: CTX OK, TWAI controller OK (loopback PASS), **CRX does not follow CTX**. Multimeter: VCC, wiring and Rs (0.3 V) are correct. Remaining suspects: CANH/CANL short or a defective transceiver – next: CANH–CANL resistance and manual dominant test (plan §2.1). No vehicle TX until the GPIO step passes | **Open – confirmed on hardware** |
 | RK-02 | Accidental Mode 04 on a real vehicle clears emissions-relevant data / readiness monitors | L | H | Compile-time `GATEWAY_ENABLE_MODE04` absent from all profiles, runtime capability flag false, desktop UI hides action unless capability present; no auto-retry | Mitigated by design |
 | RK-03 | Active TX into a vehicle bus with wrong bitrate causes error frames / bus disturbance | M | H | Bitrate is configured, never probed with TX; listen-only boot; TX only on an explicit user request; back-off after silence | Mitigated by design |
 | RK-04 | Simulation mistaken for vehicle data | M | H | Source identity in `HELLO`; every screen banner; audit rows carry source; reconnect identity must match | Mitigated by design |
