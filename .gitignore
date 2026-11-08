@@ -1,0 +1,22 @@
+# Build output
+/build/
+/out/
+/firmware/esp32-gateway/build*/
+/firmware/esp32-gateway/sdkconfig
+/firmware/esp32-gateway/sdkconfig.old
+/firmware/esp32-gateway/sdkconfig.local*
+/firmware/esp32-gateway/managed_components/
+/dist/
+
+# IDE / machine specific
+.vs/
+.vscode/
+.idea/
+*.user
+CMakeUserPresets.json
+compile_commands.json
+
+# Runtime data
+*.db-journal
+*.db-wal
+*.db-shm
