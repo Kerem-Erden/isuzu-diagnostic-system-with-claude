@@ -293,6 +293,93 @@ TEST_CASE(gateway_survives_noise_and_reports_bad_frames) {
     CHECK(host.gateway.serialCounters().badChecksum == 1);
 }
 
+namespace {
+diag::CanFrame busFrame(std::uint32_t id, std::uint8_t dlc, std::uint64_t timeUs, bool extended = false) {
+    diag::CanFrame frame;
+    frame.id = id;
+    frame.dlc = dlc;
+    frame.extended = extended;
+    frame.timestampUs = timeUs;
+    return frame;
+}
+}  // namespace
+
+TEST_CASE(gateway_monitor_counts_frames_per_id_without_transmitting) {
+    Host host;
+    host.hello();
+    host.request(2, "MONITOR_START");
+    proto::Message m;
+    REQUIRE(host.response(2, m));
+    CHECK(value(m, "monitor", "1"));
+    // Other ECUs' traffic, as seen passively on a vehicle bus.
+    for (int i = 0; i < 3; ++i) host.gateway.onCanFrame(busFrame(0x0C9, 8, host.nowUs + 1000u * static_cast<unsigned>(i)));
+    host.gateway.onCanFrame(busFrame(0x18FEF100, 8, host.nowUs + 5000, true));
+    host.run(10);
+    host.request(3, "MONITOR_STOP");
+    REQUIRE(host.response(3, m));
+    CHECK(value(m, "ids", "2"));
+    CHECK(value(m, "frames", "4"));
+    CHECK(value(m, "overflow", "0"));
+    CHECK(value(m, "bus", "LISTEN_ONLY"));
+    CHECK_EQ(host.countEvents("MON"), 2u);
+    CHECK(host.hasBodyContaining("MON|req=3|id=0C9|ext=0|n=3|dlc=8|first=0|last=2"));
+    CHECK(host.hasBodyContaining("id=18FEF100|ext=1|n=1"));
+    CHECK_EQ(host.ecu.requestsReceived(), 0u);
+    CHECK(!host.gateway.transmitEnabled());
+}
+
+TEST_CASE(gateway_monitor_blocks_every_transmitting_command) {
+    Host host;
+    host.hello();
+    host.request(2, "MONITOR_START");
+    host.request(3, "READ_DTC");
+    host.request(4, "READ_PID", {"0C"});
+    host.request(5, "LIVE_START", {"500"});
+    host.run(50);
+    proto::Message m;
+    for (std::uint32_t id : {3u, 4u, 5u}) {
+        REQUIRE(host.response(id, m));
+        CHECK(m.error == diag::fail(Stage::Capability, Code::InvalidState, 1));
+    }
+    CHECK_EQ(host.ecu.requestsReceived(), 0u);
+    CHECK(!host.gateway.transmitEnabled());
+}
+
+TEST_CASE(gateway_monitor_refuses_to_start_while_bus_is_in_use) {
+    Host host;
+    host.hello();
+    host.request(2, "LIVE_START", {"500"});
+    host.request(3, "MONITOR_START");
+    proto::Message m;
+    REQUIRE(host.response(3, m));
+    CHECK(m.error == diag::fail(Stage::Internal, Code::Busy));
+    CHECK(!host.gateway.monitorActive());
+}
+
+TEST_CASE(gateway_monitor_table_is_bounded) {
+    Host host;
+    host.hello();
+    host.request(2, "MONITOR_START");
+    for (std::uint32_t id = 0; id < gw::Gateway::kMonitorCapacity + 6; ++id) {
+        host.gateway.onCanFrame(busFrame(0x100 + id, 8, host.nowUs));
+    }
+    host.request(3, "MONITOR_STOP");
+    proto::Message m;
+    REQUIRE(host.response(3, m));
+    CHECK(value(m, "ids", "64"));
+    CHECK(value(m, "overflow", "6"));
+    CHECK(value(m, "frames", "70"));
+}
+
+TEST_CASE(gateway_monitor_stop_without_start_is_rejected) {
+    Host host;
+    host.hello();
+    host.request(2, "MONITOR_STOP");
+    proto::Message m;
+    REQUIRE(host.response(2, m));
+    CHECK(m.error == diag::fail(Stage::Protocol, Code::InvalidState));
+}
+
 TEST_CASE(gateway_reports_platform_diagnostics) {
     Host host;
     host.gateway.reportDiagnostic("can_init", "error", "ESP_ERR_INVALID_STATE");

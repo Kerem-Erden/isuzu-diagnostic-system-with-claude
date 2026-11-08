@@ -46,6 +46,11 @@ esp_err_t TwaiAdapter::createNode(bool listenOnly) noexcept {
     // automatic retries would add bus load and raise TEC repeatedly (reference RK-03).
     config.fail_retry_cnt = 0;
     config.flags.enable_listen_only = listenOnly ? 1 : 0;
+    // Self-test/loopback only for the bench profile, and never combined with listen-only.
+    if (config_.selfTest && !listenOnly) {
+        config.flags.enable_self_test = 1;
+        config.flags.enable_loopback = 1;
+    }
 
     esp_err_t result = twai_new_node_onchip(&config, &node_);
     if (result != ESP_OK) {

@@ -51,6 +51,8 @@ resynchronises on the next `#`.
 | `READ_DTC` | — | one Mode 03 request | `count=N`, `dtcs=P0087,P1093` (empty when N=0) **or** `parts=K`, `ecu=7E8` |
 | `TRACE` | `0\|1` | enables `CAN_TX`/`CAN_RX` events | `trace=` |
 | `CLEAR_DTC` | — | **Mode 04 – not implemented in this build**: always `ERR\|CAPABILITY\|DISABLED\|00` | — |
+| `MONITOR_START` | — | passive capture: controller stays listen-only, per-ID counters (64 IDs max) | `monitor=1` |
+| `MONITOR_STOP` | — | ends capture; one `MON` event per ID, then the summary | `ids=`, `frames=`, `overflow=`, `ms=`, `bus=`, `rec=`, `rxdrop=` |
 
 Session rules (implemented in `libs/gateway-core`, ADR-009):
 
@@ -63,6 +65,10 @@ Session rules (implemented in `libs/gateway-core`, ADR-009):
   `ERR|INTERNAL|BUSY|00`. A user request issued during a live sample runs right after it.
 * Live polling stops itself (`EVT DIAG live state=STOPPED reason=no_response`) after 3
   consecutive timeouts / TX failures, and skips a PID the ECU rejects with NRC 0x11/0x12/0x31.
+
+While the passive monitor runs, `READ_PID`, `READ_DTC`, `LIVE_START` and `CLEAR_DTC` are refused with
+`ERR|CAPABILITY|INVALID_STATE|01`, so a passive capture is provably transmission-free. `MONITOR_START`
+is refused with `ERR|INTERNAL|BUSY|00` while live polling or a request is active.
 
 Side-effect commands (`READ_*`, `LIVE_START`, `CLEAR_DTC`) are de-duplicated: the
 firmware remembers the last 8 request ids; a repeated id returns
@@ -81,8 +87,17 @@ checks that the total equals `count`.
 | `LIVE` | `<NAME>`, `<value>`, `<unit>`, `t=<ms>` | One decoded PID sample |
 | `LIVE_ERR` | `<NAME>`, `<STAGE>`, `<CODE>`, `<detail hex>` | A cyclic PID request failed |
 | `DTC_PART` | `req=<id>`, `dtcs=...` | Part of a long Mode 03 result (see §4) |
+| `MON` | `req=<id>`, `id=0C9`, `ext=0\|1`, `n=<count>`, `dlc=`, `first=<ms>`, `last=<ms>` | One CAN ID seen by the passive monitor (times relative to `MONITOR_START`) |
 | `CAN_TX` / `CAN_RX` | `id=7E0`, `dlc=8`, `data=0201...`, `t=<ms>` | Trace (only when `TRACE 1`; RX only for the configured responder id) |
 | `DIAG` | `session\|live\|protocol`, `<key=value>...` | Session end, live stop reason, unparsable frames |
+
+## 5b. BENCH self-test firmware (W15)
+
+The `bench` firmware profile speaks the same framing but only `HELLO` (`source=BENCH`, `ctx=`, `crx=`,
+`bitrate=`), `PING` and `BENCH_RUN`. `BENCH_RUN` answers
+`gpio=<finding>|levels=1/1/1,0/0/0,1/1/1|loopback=<finding>[|lberr=STAGE/CODE]|verdict=PASS|FAIL`
+preceded by `EVT DIAG bench_gpio|hint=…` and `EVT DIAG bench_loopback|hint=…`. The desktop refuses a
+`BENCH` gateway; `tools/bench_check.py` drives it.
 
 ## 6. Error stages and codes
 

@@ -13,6 +13,12 @@ menu "Isuzu diagnostic gateway"
             bool "Simulation (no CAN transmissions)"
         config ISUZU_GATEWAY_VEHICLE
             bool "Vehicle (11-bit ISO 15765-4, one physically addressed ECU)"
+        config ISUZU_GATEWAY_BENCH
+            bool "Bench self-test (CTX/CRX echo + TWAI loopback) - VEHICLE MUST BE DISCONNECTED"
+            help
+                Drives CTX and transmits one self-test frame. Never connect CANH/CANL to a vehicle
+                with this firmware. HELLO reports source=BENCH, which the desktop refuses for
+                diagnostics; use tools/bench_check.py.
     endchoice
 
     config ISUZU_SIM_SCENARIO

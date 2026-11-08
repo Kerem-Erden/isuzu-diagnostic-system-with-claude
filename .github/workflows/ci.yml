@@ -55,7 +55,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        profile: [simulation, vehicle]
+        profile: [simulation, vehicle, bench]
     steps:
       - uses: actions/checkout@v4
       # Build only. CI never flashes or talks to hardware.

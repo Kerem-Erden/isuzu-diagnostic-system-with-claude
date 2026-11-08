@@ -24,7 +24,8 @@ _As of 2026-11-08._
 
 ## Firmware
 
-* No bench self-test mode, no passive bus monitor (only responder frames can be traced), no
+* Bench self-test (W15) and passive monitor (W16) exist but have **never run on hardware**. The passive
+  monitor tracks at most 64 IDs and depends on the 32-event RX queue (check `rxdrop`). No
   automatic bus-off recovery (recovery happens when the node is recreated at the next listen-only /
   normal switch). See `vehicle-validation-plan.md` §1.
 * A lost TX-completion event is counted in the same `rxdrop` counter as lost RX frames.

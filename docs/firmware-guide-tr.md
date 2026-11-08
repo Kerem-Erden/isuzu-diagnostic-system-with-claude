@@ -131,6 +131,22 @@ birkaç ms içinde gönderilir (ECU'nun N_Bs süresi 1000 ms).
   listen-only/normal geçişinde node yeniden oluşturulur.
 * Kayıp TX completion olayı da `rxdrop` sayacına yazılır (tek sayaç, iki neden).
 
+## 7b. Bench self-test (W15) ve pasif izleme (W16)
+
+* **Bench profili** (`sdkconfig.defaults.bench`) ayrı bir firmware'dir; çünkü test CTX'i sürer ve bir
+  self-test frame'i gönderir. Araca bağlıyken asla kullanılmamalıdır. HELLO'da `source=BENCH` bildirir;
+  masaüstü bu kaynağa teşhis için bağlanmayı reddeder. `tools/bench_check.py`, `--vehicle-disconnected`
+  onayı olmadan çalışmaz.
+  * Adım 1: CTX düz GPIO olarak 1→0→1 sürülür, CRX okunur. Sağlıklı bir SN65HVD230, D girişini R çıkışına
+    yansıtır. Eski sistemdeki "CRX 1→1→1" belirtisi `RX_STUCK_RECESSIVE` olarak sınıflandırılır ve
+    Rs pini (yüksekse transceiver standby'dadır) ipucu verilir.
+  * Adım 2: TWAI self-test + loopback ile tek frame gönderilip geri alınır.
+  * Yorumlama `gw::bench::evaluate()` içindedir ve host'ta test edilir; ölçüm kodu (`bench_app.cpp`)
+    yalnızca ESP32'de çalışır.
+* **Pasif izleme** gateway-core'dadır: `MONITOR_START` iken denetleyici listen-only kalır, her CAN ID için
+  sayaç tutulur (en fazla 64 ID, fazlası `overflow`). Bu sırada CAN'e gönderim yapacak her komut
+  `CAPABILITY/INVALID_STATE/01` ile reddedilir; böylece pasif kaydın gönderimsiz olduğu kodla garanti edilir.
+
 ## 8. Kendin dene
 
 1. `SimulatedEcu::sendConsecutiveFrames` içinde `BadSequence` senaryosunun başlangıç

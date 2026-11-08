@@ -38,6 +38,8 @@ public:
         int txGpio = 21;
         int rxGpio = 22;
         std::uint32_t bitrate = 500000;
+        /// BENCH ONLY: normal mode is created with self-test (no ACK required) + loopback.
+        bool selfTest = false;
     };
 
     explicit TwaiAdapter(const Config& config) noexcept : config_(config) {}

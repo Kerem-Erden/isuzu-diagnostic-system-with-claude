@@ -179,7 +179,7 @@ void AppWindow::logReply(const GatewayReply& reply) {
 }
 
 void AppWindow::logEvent(const GatewayEvent& event) {
-    const QString category = event.kind.startsWith(QLatin1String("CAN_"))  ? QStringLiteral("CAN")
+    const QString category = event.kind.startsWith(QLatin1String("CAN_")) || event.kind == QLatin1String("MON") ? QStringLiteral("CAN")
                              : event.kind.startsWith(QLatin1String("LIVE")) ? QStringLiteral("LIVE")
                                                                             : QStringLiteral("EVENT");
     context_.log->append(category, event.kind, QStringLiteral("seq %1 · %2").arg(event.sequence).arg(event.fields.join(QLatin1Char(' '))));

@@ -211,6 +211,8 @@ void GatewayClient::finish(quint32 id, GatewayReply reply) {
         if (!reply.ok) problem = QStringLiteral("HELLO failed: %1").arg(reply.errorText());
         else if (identity.protocolVersion != static_cast<int>(proto::kProtocolVersion))
             problem = QStringLiteral("unsupported protocol version %1").arg(identity.protocolVersion);
+        else if (identity.source == QLatin1String("BENCH"))
+            problem = QStringLiteral("bench self-test firmware (source=BENCH) – use tools/bench_check.py; diagnostics refused");
         else if (!identity.isSimulation() && !identity.isVehicle())
             problem = QStringLiteral("gateway did not identify its data source");
         else if (!previousSource.isEmpty() && previousSource != identity.source)

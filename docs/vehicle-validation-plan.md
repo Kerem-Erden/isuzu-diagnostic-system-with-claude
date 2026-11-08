@@ -27,8 +27,8 @@ The current firmware cannot yet support every step. These are prerequisites, tra
 
 | Tool | Why | Status |
 |---|---|---|
-| W15 Bench self-test mode (TWAI internal loopback + CTX/CRX level check, transceiver disconnected from any bus) | Distinguishes controller, wiring and transceiver faults; the reference system's CRX stayed `1→1→1` | not implemented |
-| W16 Passive monitor (listen-only, per-ID frame counters and DLC, bounded) | Proves the RX path and the bitrate on the real bus without transmitting | not implemented (TRACE only shows the configured responder ID) |
+| W15 Bench self-test mode (TWAI internal loopback + CTX/CRX level check, transceiver disconnected from any bus) | Distinguishes controller, wiring and transceiver faults; the reference system's CRX stayed `1→1→1` | **implemented 2026-11-08** (`bench` firmware profile + `tools/bench_check.py`); never run on hardware |
+| W16 Passive monitor (listen-only, per-ID frame counters and DLC, bounded) | Proves the RX path and the bitrate on the real bus without transmitting | **implemented 2026-11-08** (`MONITOR_START/STOP`, Developer page "Passive monitor"); host-tested only |
 | W17 Developer-log export (CSV/JSON with timestamps) and a single-request control (one `READ_PID <pid>` without starting live polling) on the Developer page | Raw TX/RX evidence; §4 needs exactly one Mode 01 request | **implemented 2026-11-08** (Developer page: "Send once", "Export CSV…") |
 
 ## 2. Bench checks (vehicle NOT connected)
@@ -45,6 +45,23 @@ The current firmware cannot yet support every step. These are prerequisites, tra
 | CANH–CANL resistance, module unpowered | ≈ 120 Ω if the on-board terminator ("121") is connected | note value; the vehicle bus is already terminated (≈ 60 Ω) |
 | CANH, CANL to GND, powered, idle | ≈ 2.3–2.5 V each, difference ≈ 0 V | transceiver defect |
 
+### 2.1b Bench self-test firmware (W15) – module on the bench, **no bus connected**
+
+```powershell
+idf.py -B build-bench -D SDKCONFIG=build-bench/sdkconfig -D "SDKCONFIG_DEFAULTS=sdkconfig.defaults;sdkconfig.defaults.bench" -p COM5 flash
+python tools/bench_check.py COM5 --vehicle-disconnected --csv bench-results.csv
+```
+
+| Result | Meaning |
+|---|---|
+| `gpio=PASS`, `loopback=PASS` | controller, pins and transceiver echo work – continue with 2.2 |
+| `gpio=RX_STUCK_RECESSIVE` (levels `…,0/0/1,…`) | the reference-system symptom: transceiver does not echo D→R – measure VCC and **Rs**, check CRX wiring |
+| `gpio=RX_STUCK_DOMINANT` | R held low: CANH/CANL short or bus held dominant |
+| `gpio=TX_PIN_NOT_FOLLOWING` | GPIO21 shorted or driven by something else |
+| `gpio=PASS`, `loopback=LOOPBACK_FAILED` | pins fine; check bitrate / TWAI configuration (`lberr` names the stage) |
+
+Re-flash the simulation or vehicle profile afterwards; the bench firmware cannot be used for diagnostics.
+
 ### 2.2 Two-node bench bus (proves the transmit path)
 
 Second CAN node (USB–CAN adapter or second ESP32 + transceiver) at 500 kbit/s, 120 Ω at each end.
@@ -57,11 +74,14 @@ The second node only ACKs (normal mode, no transmissions).
 
 ## 3. Passive observation on the vehicle (listen-only, no transmission)
 
-Requires W16. Vehicle profile firmware, desktop connected, **no request sent**.
+Vehicle profile firmware, desktop connected, **no request sent**. Use Developer page → Passive monitor
+**Start**, wait, **Stop + report**; the `MON` rows (category CAN) are the evidence – export them as CSV.
+The gateway refuses every transmitting command while the monitor runs.
 
 1. Connect CANH (pin 6), CANL (pin 14), signal ground (pin 5). Ignition ON.
 2. `STATUS`: expect `bus=LISTEN_ONLY`, `rec` stable (not rising). Rising REC → wrong bitrate or wiring: disconnect.
-3. Passive monitor for 30 s: record IDs, counts, DLCs. Expect regular traffic (previously ≈ 500 kbit/s was seen).
+3. Passive monitor for 30 s: record IDs, counts, DLCs (summary `frames=`, `overflow=`, `rxdrop=` must be checked:
+   `rxdrop` > 0 means the ESP32 could not keep up and counts are lower bounds). Expect regular traffic (previously ≈ 500 kbit/s was seen).
 4. Note whether `0x7E8`–`0x7EF` appear spontaneously (they should not).
 
 Abort: any dashboard warning, REC climbing, or unexpected vehicle behaviour.

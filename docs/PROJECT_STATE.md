@@ -3,8 +3,8 @@
 _Last updated: 2026-11-08_
 
 ## Current phase
-Phases 0–6 delivered for the software/simulation MVP; CI green. Nothing is vehicle-validated. Open: W15–W16
-(firmware bench self-test, passive monitor) before any vehicle step. Firmware (Phase 2) builds with ESP-IDF v6.1; not flashed.
+Phases 0–6 delivered for the software/simulation MVP; CI green. Nothing is vehicle-validated. Next physical step: bench self-test
+on the ESP32 + transceiver (user permission), then the electrical checklist. Firmware (Phase 2) builds with ESP-IDF v6.1; not flashed.
 
 ## Completed
 * Phase 0 (`bc9a39f`): analysis, requirements, registers, ADR-001..011, protocol spec, knowledge DB
@@ -46,8 +46,12 @@ Phases 0–6 delivered for the software/simulation MVP; CI green. Nothing is veh
 * First push 2026-11-08 (user approved). CI run 1 failed: Linux GCC `-Wsign-conversion` in crc16.hpp; fixed in
   `cb662b4` (reproduced in WSL Ubuntu 24.04). CI run 42478500299: **all 5 jobs green** (host GCC/Clang + sanitizers,
   desktop Qt 6.8.3, firmware ESP-IDF 6.0.2 simulation + vehicle).
-* W17 (this checkpoint): developer-log CSV export with identity header and drop note; single Mode 01
+* W17 (`efd52e0`, CI green run 42496804516): developer-log CSV export with identity header and drop note; single Mode 01
   request control on the Developer page. desktop_model_tests now 7 cases.
+* W15/W16 (this checkpoint): passive monitor in gateway-core (`MONITOR_START/STOP`, `MON` events, transmit lock)
+  + Developer page controls; bench self-test firmware profile (`bench_app.cpp`, `TwaiAdapter` self-test flag),
+  host-tested verdict logic `gw::bench`, `tools/bench_check.py` (safety refusals verified on COM5), desktop
+  refuses `source=BENCH`. CI firmware matrix now includes `bench`. Never run on hardware.
 
 ## In progress
 * none
@@ -65,7 +69,7 @@ Phases 0–6 delivered for the software/simulation MVP; CI green. Nothing is veh
 cmake --preset host-debug && cmake --build --preset host-debug && ctest --preset host-debug
 → 100% passed: core_tests 48, protocol_tests 22, gateway_tests 26; 0 warnings (MinGW 13.1)
 QT_ROOT=C:/Qt/6.11.1/mingw_64; cmake --preset windows-debug && cmake --build --preset windows-debug && ctest --preset windows-debug
-→ 10/10 pass (desktop 11, serial 7, data 18, live 9, models 6, integration 1; bench skips without ISUZU_BENCH_PORT), 0 warnings
+→ 10/10 pass (gateway 36, desktop 12, serial 7, data 18, live 9, models 7, integration 1; bench skips without ISUZU_BENCH_PORT), 0 warnings
 tools/package-windows.ps1 → Release build, 9 test executables pass (+ skipped bench), package runs standalone
 ISUZU_BENCH_PORT=COM5 bench_serial_tests.exe → pass against the ESP32 (simulation firmware)
 ```
@@ -80,8 +84,12 @@ CI workflow written but never run (nothing pushed).
 * none
 
 ## Next task
-1. W15 / W16 firmware bench self-test and passive monitor – then the electrical checklist with the user.
-2. Manual: GUI against COM5 incl. one USB unplug.
+1. With the user's permission: flash the **bench** profile to COM5 (transceiver attached, no bus) and run
+   `tools/bench_check.py COM5 --vehicle-disconnected`; record the result. Then the multimeter checklist
+   (`vehicle-validation-plan.md` §2.1) if it fails.
+2. Re-flash the simulation profile afterwards.
+3. Manual: GUI against COM5 incl. one USB unplug.
+4. Two-node bench bus (§2.2) needs a second CAN node (hardware the user may need to obtain).
 
 ## Last checkpoint commit
 * see `git log --oneline -1`

@@ -11,6 +11,7 @@ idf_component_register(
         "${ISUZU_LIBS}/diagnostic-core/src/obd_transaction.cpp"
         "${ISUZU_LIBS}/serial-protocol/src/frame.cpp"
         "${ISUZU_LIBS}/serial-protocol/src/message.cpp"
+        "${ISUZU_LIBS}/gateway-core/src/bench.cpp"
         "${ISUZU_LIBS}/gateway-core/src/gateway.cpp"
         "${ISUZU_LIBS}/gateway-core/src/simulated_ecu.cpp"
     INCLUDE_DIRS

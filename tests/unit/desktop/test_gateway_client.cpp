@@ -40,9 +40,48 @@ struct Rig {
 
 }  // namespace
 
+/// Answers HELLO like the BENCH self-test firmware does (source=BENCH).
+class BenchFirmwareTransport final : public Transport {
+public:
+    QString description() const override { return QStringLiteral("fake bench"); }
+    bool open() override { return open_ = true; }
+    void close() override {
+        if (!open_) return;
+        open_ = false;
+        QMetaObject::invokeMethod(this, [this] { emit closed(QStringLiteral("closed by user")); }, Qt::QueuedConnection);
+    }
+    bool isOpen() const override { return open_; }
+    void write(const QByteArray& bytes) override {
+        proto::FrameReader reader;
+        reader.feed(bytes.constData(), static_cast<std::size_t>(bytes.size()), [this](std::string_view body) {
+            const auto parsed = proto::parseBody(body);
+            if (!parsed.ok()) return;
+            proto::FrameWriter writer;
+            proto::beginOk(writer, parsed.value().id).keyValue("proto", 1u).keyValue("source", "BENCH").keyValue("mode04", 0u);
+            const std::string_view frame = writer.finish();
+            const QByteArray reply(frame.data(), static_cast<qsizetype>(frame.size()));
+            QMetaObject::invokeMethod(this, [this, reply] { emit bytesReceived(reply); }, Qt::QueuedConnection);
+        });
+    }
+
+private:
+    bool open_ = false;
+};
+
 class GatewayClientTest : public QObject {
     Q_OBJECT
 private slots:
+    void benchFirmwareIsRefusedForDiagnostics() {
+        BenchFirmwareTransport transport;
+        GatewayClient client(&transport);
+        QSignalSpy failed(&client, &GatewayClient::connectionFailed);
+        client.connectToGateway();
+        QTRY_COMPARE(failed.count(), 1);
+        QVERIFY(failed.at(0).at(0).toString().contains(QStringLiteral("source=BENCH")));
+        QTRY_COMPARE(client.state(), GatewayClient::State::Disconnected);
+        QVERIFY(!transport.isOpen());
+    }
+
     void handshakeReportsSimulationIdentity() {
         Rig rig;
         QSignalSpy identity(&rig.client, &GatewayClient::identityReady);

@@ -18,7 +18,9 @@ build directory, so profiles never overwrite each other and nothing generated is
 | Simulation | `idf.py -B build-sim -D SDKCONFIG=build-sim/sdkconfig -D "SDKCONFIG_DEFAULTS=sdkconfig.defaults;sdkconfig.defaults.simulation" build` | none (TWAI not initialised) |
 | Vehicle | `idf.py -B build-vehicle -D SDKCONFIG=build-vehicle/sdkconfig -D "SDKCONFIG_DEFAULTS=sdkconfig.defaults;sdkconfig.defaults.vehicle" build` | listen-only at boot; TX only for desktop requests |
 
-Neither profile contains OBD Mode 04.
+| Bench (W15) | `idf.py -B build-bench -D SDKCONFIG=build-bench/sdkconfig -D "SDKCONFIG_DEFAULTS=sdkconfig.defaults;sdkconfig.defaults.bench" build` | **drives CTX + one self-test frame – vehicle must be disconnected** |
+
+No profile contains OBD Mode 04. The bench profile reports `source=BENCH` and is refused by the desktop.
 
 ### Linux VM workflow (current developer setup)
 
@@ -74,7 +76,7 @@ MinGW): connects to the simulation, finds the knowledge DB, saves audit rows. `d
 
 `.github/workflows/ci.yml`:
 * `host-tests`: GCC and Clang on Ubuntu with ASan/UBSan, all CTest suites.
-* `firmware`: ESP-IDF 6.0.2 build of the simulation and vehicle profiles (no flashing).
+* `firmware`: ESP-IDF 6.0.2 build of the simulation, vehicle and bench profiles (no flashing).
 
 ## 5. Local environment notes (2026-11-08)
 

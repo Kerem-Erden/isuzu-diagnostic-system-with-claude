@@ -159,6 +159,8 @@ private:
     QTableView* table_;
     QComboBox* singlePid_;
     QPushButton* singleRead_;
+    QPushButton* monitorStart_;
+    QPushButton* monitorStop_;
 };
 
 class SettingsPage final : public Page {

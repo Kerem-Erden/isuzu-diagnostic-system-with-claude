@@ -55,6 +55,8 @@ public:
     static constexpr std::size_t kLivePidCount = 5;
     /// DTCs per response/event chunk so that each frame stays below proto::kMaxFrameLength.
     static constexpr std::size_t kDtcsPerChunk = 30;
+    /// Distinct CAN IDs tracked by the passive monitor; further IDs only increase `overflow`.
+    static constexpr std::size_t kMonitorCapacity = 64;
 
     struct Counters {
         std::uint32_t requests = 0;
@@ -83,6 +85,7 @@ public:
 
     bool sessionActive() const noexcept { return sessionActive_; }
     bool liveActive() const noexcept { return liveActive_; }
+    bool monitorActive() const noexcept { return monitorActive_; }
     bool transmitEnabled() const noexcept { return transmitEnabled_; }
     const Counters& counters() const noexcept { return counters_; }
     const proto::FrameReader::Counters& serialCounters() const noexcept { return reader_.counters(); }
@@ -113,6 +116,8 @@ private:
     void stopLive(const char* reason) noexcept;
     void endSession() noexcept;
     void updateTransmitState() noexcept;
+    void recordMonitorFrame(const diag::CanFrame& frame) noexcept;
+    void finishMonitor(std::uint32_t requestId) noexcept;
 
     // Not named "emit": Qt defines `emit` as a macro and this header is included by the desktop.
     void sendFrame(std::string_view frame) noexcept;
@@ -140,6 +145,22 @@ private:
     std::size_t liveIndex_ = 0;
     std::uint8_t liveFailures_ = 0;
     std::array<bool, kLivePidCount> liveUnsupported_{};
+
+    /// Passive monitor (W16): listen-only frame statistics per CAN ID, no transmission allowed.
+    struct MonitorEntry {
+        std::uint32_t id = 0;
+        bool extended = false;
+        std::uint8_t lastDlc = 0;
+        std::uint32_t count = 0;
+        std::uint32_t firstMs = 0;  ///< relative to MONITOR_START
+        std::uint32_t lastMs = 0;
+    };
+    bool monitorActive_ = false;
+    std::uint64_t monitorStartUs_ = 0;
+    std::array<MonitorEntry, kMonitorCapacity> monitor_{};
+    std::size_t monitorUsed_ = 0;
+    std::uint32_t monitorFrames_ = 0;
+    std::uint32_t monitorOverflow_ = 0;
 
     std::array<std::uint32_t, 8> recentIds_{};
     std::size_t recentNext_ = 0;

@@ -1,6 +1,7 @@
 idf_component_register(
     SRCS
         "app_main.cpp"
+        "bench_app.cpp"
         "twai_adapter.cpp"
         "uart_transport.cpp"
     INCLUDE_DIRS "."

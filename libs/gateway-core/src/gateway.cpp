@@ -109,6 +109,7 @@ void Gateway::onSerialBytes(const char* data, std::size_t length, std::uint64_t 
 }
 
 void Gateway::onCanFrame(const diag::CanFrame& frame) noexcept {
+    if (monitorActive_) recordMonitorFrame(frame);
     if (frame.id == config_.isotp.rxId) traceFrame("CAN_RX", frame);
     diag::IsoTpReceiver::Output output = transaction_.onFrame(frame);
     if (output.sendFrame) {
@@ -150,6 +151,7 @@ void Gateway::reportDiagnostic(std::string_view category, std::string_view key, 
 void Gateway::endSession() noexcept {
     sessionActive_ = false;
     if (liveActive_) stopLive("session_timeout");
+    monitorActive_ = false;  // the statistics stay unreported; a new session starts a new capture
     queued_ = PendingRequest{};
     sendFrame(beginEvent("DIAG").field("session").keyValue("state", "ENDED").finish());
 }
@@ -220,6 +222,38 @@ void Gateway::handleRequest(const proto::Message& request, std::uint64_t nowUs) 
     if (command == "LIVE_STOP") {
         if (liveActive_) stopLive("requested");
         sendOkSimple(id, "live", 0);
+        return;
+    }
+    if (command == "MONITOR_START") {
+        // Passive capture must be provably transmission-free: refuse while anything could use the bus.
+        if (liveActive_ || active_.kind != Kind::None || queued_.kind != Kind::None) {
+            sendError(id, diag::fail(Stage::Internal, Code::Busy));
+            return;
+        }
+        monitorActive_ = true;
+        monitorStartUs_ = nowUs;
+        monitorUsed_ = 0;
+        monitorFrames_ = 0;
+        monitorOverflow_ = 0;
+        if (transmitEnabled_) {
+            can_.setTransmitEnabled(false);
+            transmitEnabled_ = false;
+        }
+        sendOkSimple(id, "monitor", 1);
+        return;
+    }
+    if (command == "MONITOR_STOP") {
+        if (!monitorActive_) {
+            sendError(id, diag::fail(Stage::Protocol, Code::InvalidState));
+            return;
+        }
+        finishMonitor(id);
+        return;
+    }
+    if (monitorActive_ && (command == "READ_PID" || command == "READ_DTC" || command == "LIVE_START" ||
+                           command == "CLEAR_DTC")) {
+        // While monitoring, the controller stays listen-only: nothing may be transmitted.
+        sendError(id, diag::fail(Stage::Capability, Code::InvalidState, 1));
         return;
     }
     if (command == "TRACE") {
@@ -315,6 +349,7 @@ void Gateway::sendStatus(std::uint32_t id) noexcept {
              .keyValue("rxdrop", bus.rxDropped)
              .keyValue("buserr", bus.busErrors)
              .keyValue("live", liveActive_ ? 1u : 0u)
+             .keyValue("monitor", monitorActive_ ? 1u : 0u)
              .keyValue("tx", transmitEnabled_ ? 1u : 0u)
              .keyValue("badframes", counters_.badFrames)
              .keyValue("crcerr", reader_.counters().badChecksum)
@@ -484,6 +519,54 @@ void Gateway::scheduleLive(std::uint64_t nowUs) noexcept {
 void Gateway::stopLive(const char* reason) noexcept {
     liveActive_ = false;
     sendFrame(beginEvent("DIAG").field("live").keyValue("state", "STOPPED").keyValue("reason", reason).finish());
+}
+
+// ------------------------------------------------------------------ passive monitor
+
+void Gateway::recordMonitorFrame(const diag::CanFrame& frame) noexcept {
+    ++monitorFrames_;
+    const auto relativeMs = usToMs(frame.timestampUs > monitorStartUs_ ? frame.timestampUs - monitorStartUs_ : 0);
+    for (std::size_t i = 0; i < monitorUsed_; ++i) {
+        MonitorEntry& e = monitor_[i];
+        if (e.id == frame.id && e.extended == frame.extended) {
+            ++e.count;
+            e.lastDlc = frame.dlc;
+            e.lastMs = relativeMs;
+            return;
+        }
+    }
+    if (monitorUsed_ == monitor_.size()) {
+        ++monitorOverflow_;  // bounded table: a flood of IDs cannot exhaust memory
+        return;
+    }
+    monitor_[monitorUsed_++] = MonitorEntry{frame.id, frame.extended, frame.dlc, 1, relativeMs, relativeMs};
+}
+
+void Gateway::finishMonitor(std::uint32_t requestId) noexcept {
+    monitorActive_ = false;
+    // One event per ID first, then the summary response – like DTC_PART, so the reply never truncates.
+    for (std::size_t i = 0; i < monitorUsed_; ++i) {
+        const MonitorEntry& e = monitor_[i];
+        sendFrame(beginEvent("MON")
+                      .keyValue("req", requestId)
+                      .keyHex("id", e.id, e.extended ? 8u : 3u)
+                      .keyValue("ext", e.extended ? 1u : 0u)
+                      .keyValue("n", e.count)
+                      .keyValue("dlc", e.lastDlc)
+                      .keyValue("first", e.firstMs)
+                      .keyValue("last", e.lastMs)
+                      .finish());
+    }
+    const BusStatus bus = can_.status();
+    sendFrame(proto::beginOk(writer_, requestId)
+                  .keyValue("ids", static_cast<std::uint32_t>(monitorUsed_))
+                  .keyValue("frames", monitorFrames_)
+                  .keyValue("overflow", monitorOverflow_)
+                  .keyValue("ms", usToMs(nowUs_ - monitorStartUs_))
+                  .keyValue("bus", toString(bus.state))
+                  .keyValue("rec", bus.rec)
+                  .keyValue("rxdrop", bus.rxDropped)
+                  .finish());
 }
 
 }  // namespace gw

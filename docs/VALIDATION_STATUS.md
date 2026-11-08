@@ -30,6 +30,11 @@ Nothing in this repository is vehicle-validated. Every feature below is at most
 | Desktop app starts | MANUAL smoke | `isuzu_diagnostic.exe` with `QT_QPA_PLATFORM=offscreen` still running after 3 s; no UI interaction verified |
 | SerialTransport without hardware: CP210x id recognition, enumeration, async open failure → closed once, client reports connectionFailed, no-op when closed, safe destruction during open, no transport switch while connected | AUTO | `ctest --preset windows-debug` → 5/5 (desktop_serial_tests 7 cases), 2026-11-08 |
 | Desktop handling of a physical USB unplug | ASSUMED | not yet tested by pulling the cable |
+| Passive monitor: per-ID counts, ext IDs, bounded table (64 + overflow), refuses every transmitting command, stays listen-only, refuses start while bus in use | AUTO | gateway_tests (36 cases), host MinGW + WSL GCC 13.3 ASan/UBSan, 2026-11-08 |
+| Bench verdict logic incl. reference symptom `1/1/1,0/0/1,1/1/1` → RX_STUCK_RECESSIVE; result frame format | AUTO | same run |
+| Bench firmware profile builds (and simulation/vehicle still build) | AUTO (build) | ESP-IDF v6.1 local, 0 warnings, 2026-11-08 |
+| bench_check.py refuses without --vehicle-disconnected and refuses a non-BENCH gateway | MANUAL | run against COM5 (simulation firmware, HELLO only), 2026-11-08 |
+| Bench self-test and passive monitor on real hardware | ASSUMED | not run (needs flashing bench firmware / vehicle access with permission) |
 | Developer-log CSV export (RFC 4180 quoting, ISO 8601 ms timestamps, identity header, drop note) | AUTO | desktop_model_tests `eventLogExportsQuotedCsv`, 2026-11-08; file dialog path not automated |
 | End-to-end chain in simulation (connect → audit session → multi-frame Mode 03 → knowledge → audit → model → live data → injected NRC scan audited → unplug) | AUTO + SIM | `ctest --preset windows-debug -L integration` → pass; full suite 10/10, 2026-11-08 |
 | Windows Release package self-contained | MANUAL | `tools/package-windows.ps1` (tests 9/9 in Release), unpacked folder run with PATH=System32 only, screenshot tour shows knowledge + audit working, 2026-11-08 |

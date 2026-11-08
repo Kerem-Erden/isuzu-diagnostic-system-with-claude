@@ -1,6 +1,7 @@
 # gateway-core: gateway application logic and the deterministic simulated ECU.
 # Compiled into the ESP32 firmware and into the desktop simulation source (ADR-003).
 add_library(gateway_core STATIC
+    src/bench.cpp
     src/gateway.cpp
     src/simulated_ecu.cpp)
 add_library(isuzu::gateway_core ALIAS gateway_core)

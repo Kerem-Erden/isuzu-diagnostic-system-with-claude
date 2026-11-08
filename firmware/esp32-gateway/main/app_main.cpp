@@ -18,6 +18,9 @@
 #else
 #include "twai_adapter.hpp"
 #endif
+#if CONFIG_ISUZU_GATEWAY_BENCH
+#include "bench_app.hpp"
+#endif
 
 namespace {
 
@@ -53,6 +56,11 @@ UartTransport uart;
 extern "C" void app_main(void) {
     const esp_err_t uartResult = uart.begin();
     if (uartResult != ESP_OK) return;  // no channel to report anything; the desktop will time out
+
+#if CONFIG_ISUZU_GATEWAY_BENCH
+    // BENCH profile: no gateway, no OBD – only the self-test protocol (vehicle must be disconnected).
+    runBenchApp(uart);
+#endif
 
     static const gw::GatewayConfig config = makeConfig();
 

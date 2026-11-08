@@ -26,7 +26,8 @@ set_tests_properties(protocol_tests PROPERTIES LABELS "unit;protocol")
 
 add_executable(gateway_tests
     unit/test_main.cpp
-    unit/gateway/test_gateway.cpp)
+    unit/gateway/test_gateway.cpp
+    unit/gateway/test_bench.cpp)
 target_include_directories(gateway_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/unit ${CMAKE_CURRENT_SOURCE_DIR}/unit/gateway)
 target_link_libraries(gateway_tests PRIVATE isuzu::gateway_core)
 isuzu_set_warnings(gateway_tests)

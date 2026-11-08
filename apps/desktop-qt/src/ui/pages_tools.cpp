@@ -40,7 +40,9 @@ DeveloperPage::DeveloperPage(AppContext& context, QWidget* parent)
       counters_(new QLabel),
       table_(new QTableView),
       singlePid_(new QComboBox),
-      singleRead_(new QPushButton(tr("Send once"))) {
+      singleRead_(new QPushButton(tr("Send once"))),
+      monitorStart_(new QPushButton(tr("Start"))),
+      monitorStop_(new QPushButton(tr("Stop + report"))) {
     filter_->setSourceModel(context_.log);
     category_->addItem(tr("All categories"), QString());
     for (const char* name : {"CONNECTION", "PROTOCOL", "REQUEST", "EVENT", "CAN", "SCAN", "LIVE"}) {
@@ -73,6 +75,12 @@ DeveloperPage::DeveloperPage(AppContext& context, QWidget* parent)
     single->addWidget(new QLabel(tr("Single Mode 01 request:")));
     single->addWidget(singlePid_);
     single->addWidget(singleRead_);
+    single->addSpacing(24);
+    // Passive monitor (W16): listen-only frame statistics per CAN ID; the gateway refuses every
+    // transmitting command while it runs. Results arrive as MON events (category CAN, exportable).
+    single->addWidget(new QLabel(tr("Passive monitor:")));
+    single->addWidget(monitorStart_);
+    single->addWidget(monitorStop_);
     single->addStretch();
     content_->addLayout(single);
     content_->addWidget(counters_);
@@ -97,6 +105,8 @@ DeveloperPage::DeveloperPage(AppContext& context, QWidget* parent)
     connect(singleRead_, &QPushButton::clicked, this,
             [this] { context_.client->send(QStringLiteral("READ_PID"), {singlePid_->currentData().toString()}); });
     connect(exportButton, &QPushButton::clicked, this, &DeveloperPage::exportCsv);
+    connect(monitorStart_, &QPushButton::clicked, this, [this] { context_.client->send(QStringLiteral("MONITOR_START")); });
+    connect(monitorStop_, &QPushButton::clicked, this, [this] { context_.client->send(QStringLiteral("MONITOR_STOP")); });
     connect(context_.log, &QAbstractItemModel::rowsInserted, this, [this] {
         updateCounters();
         if (table_->isVisible()) table_->scrollToBottom();
@@ -105,6 +115,8 @@ DeveloperPage::DeveloperPage(AppContext& context, QWidget* parent)
         const bool ready = state == GatewayClient::State::Ready;
         trace_->setEnabled(ready);
         singleRead_->setEnabled(ready);
+        monitorStart_->setEnabled(ready);
+        monitorStop_->setEnabled(ready);
         if (!ready) {
             QSignalBlocker block(trace_);  // the gateway forgets TRACE on reboot/reconnect
             trace_->setChecked(false);
@@ -113,6 +125,8 @@ DeveloperPage::DeveloperPage(AppContext& context, QWidget* parent)
     });
     trace_->setEnabled(false);
     singleRead_->setEnabled(false);
+    monitorStart_->setEnabled(false);
+    monitorStop_->setEnabled(false);
     updateCounters();
 }
 
