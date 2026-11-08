@@ -8,13 +8,16 @@
 #include <QLabel>
 #include <QListWidget>
 #include <QPushButton>
+#include <QHeaderView>
 #include <QStandardPaths>
+#include <QTableWidget>
 #include <QVBoxLayout>
 
 #include "data/audit_store.hpp"
 #include "gateway/gateway_client.hpp"
 #include "knowledge/knowledge_repository.hpp"
 #include "services/dtc_scan_service.hpp"
+#include "services/live_data_service.hpp"
 #include "transport/serial_transport.hpp"
 #include "transport/simulation_transport.hpp"
 
@@ -39,9 +42,23 @@ MainWindow::MainWindow(QWidget* parent)
           QDir(QCoreApplication::applicationDirPath()).filePath(QStringLiteral("data/isuzu-knowledge.db")))),
       audit_(std::make_unique<AuditStore>(
           QDir(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation)).filePath(QStringLiteral("audit.db")))),
-      scanService_(new DtcScanService(client_, knowledge_.get(), audit_.get(), this)) {
+      scanService_(new DtcScanService(client_, knowledge_.get(), audit_.get(), this)),
+      liveService_(new LiveDataService(client_, this)),
+      liveTable_(new QTableWidget) {
     setWindowTitle(tr("Isuzu Diagnostic System"));
-    resize(900, 600);
+    resize(1000, 700);
+
+    liveTable_->setColumnCount(6);
+    liveTable_->setHorizontalHeaderLabels({tr("Parameter"), tr("Value"), tr("Unit"), tr("State"), tr("Updated"), tr("Source")});
+    liveTable_->setRowCount(static_cast<int>(liveService_->parameters().size()));
+    liveTable_->setEditTriggers(QAbstractItemView::NoEditTriggers);
+    liveTable_->verticalHeader()->setVisible(false);
+    liveTable_->horizontalHeader()->setStretchLastSection(true);
+    for (int row = 0; row < liveTable_->rowCount(); ++row) {
+        for (int column = 0; column < liveTable_->columnCount(); ++column) liveTable_->setItem(row, column, new QTableWidgetItem);
+        updateLiveRow(row);
+    }
+    liveTable_->setMaximumHeight(liveTable_->verticalHeader()->length() + liveTable_->horizontalHeader()->height() + 4);
 
     banner_->setAlignment(Qt::AlignCenter);
     banner_->setStyleSheet(QStringLiteral("font-weight:600; padding:8px; background:#E8EAED; color:#30343B;"));
@@ -62,6 +79,7 @@ MainWindow::MainWindow(QWidget* parent)
     layout->addWidget(banner_);
     layout->addWidget(details_);
     layout->addLayout(buttons);
+    layout->addWidget(liveTable_);
     layout->addWidget(log_, 1);
     auto* central = new QWidget;
     central->setLayout(layout);
@@ -87,8 +105,20 @@ MainWindow::MainWindow(QWidget* parent)
                          : tr("Audit DB unavailable (%1): history will not be recorded")
                                .arg(QLatin1String(diag::toString(auditOpen.code))));
     connect(liveButton_, &QPushButton::clicked, this, [this] {
-        client_->send(liveRunning_ ? QStringLiteral("LIVE_STOP") : QStringLiteral("LIVE_START"),
-                      liveRunning_ ? QStringList{} : QStringList{QStringLiteral("1000")});
+        if (liveService_->running()) liveService_->stop();
+        else liveService_->start(1000);
+    });
+    connect(liveService_, &LiveDataService::parameterChanged, this, &MainWindow::updateLiveRow);
+    connect(liveService_, &LiveDataService::started, this, [this](int period) {
+        liveButton_->setText(tr("Stop live data"));
+        log(tr("Live data started (%1 ms cycle)").arg(period));
+    });
+    connect(liveService_, &LiveDataService::stopped, this, [this](const QString& reason) {
+        liveButton_->setText(tr("Start live data"));
+        log(tr("Live data stopped: %1").arg(reason));
+    });
+    connect(liveService_, &LiveDataService::startFailed, this, [this](const diag::Error& error) {
+        log(tr("Live data could not start: %1/%2").arg(QLatin1String(diag::toString(error.stage)), QLatin1String(diag::toString(error.code))));
     });
     connect(client_, &GatewayClient::identityReady, this, &MainWindow::onIdentity);
     connect(client_, &GatewayClient::replyReceived, this, &MainWindow::onReply);
@@ -103,6 +133,32 @@ MainWindow::MainWindow(QWidget* parent)
 
 // Out of line so unique_ptr can see the complete repository/store types.
 MainWindow::~MainWindow() = default;
+
+void MainWindow::updateLiveRow(int row) {
+    const LiveParameter& p = liveService_->parameters().at(row);
+    using State = LiveParameter::State;
+    QString state;
+    QColor color(QStringLiteral("#68707C"));
+    switch (p.state) {
+        case State::NoData: state = tr("no data"); break;
+        case State::Fresh: state = tr("fresh"); color = QColor(QStringLiteral("#1E7B34")); break;
+        case State::Stale: state = tr("stale"); color = QColor(QStringLiteral("#B26A00")); break;
+        case State::Unsupported: state = tr("unsupported by ECU"); break;
+        case State::Error:
+            state = tr("error %1/%2").arg(QLatin1String(diag::toString(p.lastError.stage)), QLatin1String(diag::toString(p.lastError.code)));
+            color = QColor(QStringLiteral("#A5001E"));
+            break;
+    }
+    liveTable_->item(row, 0)->setText(p.displayName);
+    // A stale or failed value stays visible (greyed) but is never presented as current.
+    liveTable_->item(row, 1)->setText(p.hasValue ? QString::number(p.value, 'f', 2) : QStringLiteral("—"));
+    liveTable_->item(row, 1)->setForeground(p.state == State::Fresh ? QColor(QStringLiteral("#30343B")) : QColor(QStringLiteral("#9AA0A8")));
+    liveTable_->item(row, 2)->setText(p.unit);
+    liveTable_->item(row, 3)->setText(state);
+    liveTable_->item(row, 3)->setForeground(color);
+    liveTable_->item(row, 4)->setText(p.hasValue ? tr("gateway t=%1 ms").arg(p.gatewayTimeMs) : QString());
+    liveTable_->item(row, 5)->setText(p.source);
+}
 
 void MainWindow::refreshPorts() {
     const QString previous = portCombo_->currentData().toString();
@@ -149,10 +205,7 @@ void MainWindow::setConnectedUi(bool connected) {
     refreshButton_->setEnabled(!connected);
     readDtcButton_->setEnabled(connected);
     liveButton_->setEnabled(connected);
-    if (!connected) {
-        liveRunning_ = false;
-        liveButton_->setText(tr("Start live data"));
-    }
+    if (!connected) liveButton_->setText(tr("Start live data"));
 }
 
 void MainWindow::onIdentity(const GatewayIdentity& identity) {
@@ -211,21 +264,14 @@ void MainWindow::onScan(const DtcScanResult& result) {
 
 void MainWindow::onReply(const GatewayReply& reply) {
     if (reply.command == QLatin1String("PING") && reply.ok) return;  // keep-alive noise
-    if (reply.command == QLatin1String("LIVE_START") && reply.ok) {
-        liveRunning_ = true;
-        liveButton_->setText(tr("Stop live data"));
-    } else if (reply.command == QLatin1String("LIVE_STOP") && reply.ok) {
-        liveRunning_ = false;
-        liveButton_->setText(tr("Start live data"));
-    }
-    if (reply.command == QLatin1String("READ_DTC")) return;  // reported by onScan()
+    // READ_DTC and LIVE_* outcomes are reported by their services.
+    if (reply.command == QLatin1String("READ_DTC") || reply.command.startsWith(QLatin1String("LIVE_"))) return;
     log(tr("%1 #%2 → %3").arg(reply.command).arg(reply.id).arg(reply.ok ? tr("OK") : reply.errorText()));
 }
 
 void MainWindow::onEvent(const GatewayEvent& event) {
-    if (event.kind == QLatin1String("LIVE")) {
-        log(tr("LIVE %1 = %2 %3").arg(event.fields.value(0), event.fields.value(1), event.fields.value(2)));
-    } else if (event.kind != QLatin1String("DTC_PART")) {
+    // Live samples go to the table; only other events are logged.
+    if (event.kind != QLatin1String("LIVE") && event.kind != QLatin1String("LIVE_ERR") && event.kind != QLatin1String("DTC_PART")) {
         log(tr("EVT %1 %2").arg(event.kind, event.fields.join(QLatin1Char(' '))));
     }
 }

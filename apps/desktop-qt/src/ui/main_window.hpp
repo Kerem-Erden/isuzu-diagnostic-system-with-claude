@@ -13,6 +13,8 @@
 
 class AuditStore;
 class DtcScanService;
+class LiveDataService;
+class QTableWidget;
 class GatewayClient;
 namespace knowledge {
 class KnowledgeRepository;
@@ -36,6 +38,7 @@ public:
 
 private:
     void onScan(const DtcScanResult& result);
+    void updateLiveRow(int row);
     void onIdentity(const GatewayIdentity& identity);
     void onReply(const GatewayReply& reply);
     void onEvent(const GatewayEvent& event);
@@ -59,5 +62,6 @@ private:
     std::unique_ptr<knowledge::KnowledgeRepository> knowledge_;
     std::unique_ptr<AuditStore> audit_;
     DtcScanService* scanService_;
-    bool liveRunning_ = false;
+    LiveDataService* liveService_;
+    QTableWidget* liveTable_;
 };

@@ -80,6 +80,22 @@ Hata enjeksiyonu: `setLinkMuted()` (ölü hat), `injectToDesktop()` (gürültü 
   değildir ve `NOT NULL` kısıtını bozar. Testler bunu üç yerde yakaladı; çözüm `sqlText()` / `text()`
   yardımcılarıdır.
 
+## 4c. LiveDataService
+
+PID listesi `diag::obd::livePids()`'ten gelir; masaüstü ve firmware aynı tabloyu kullanır. Polling
+(round-robin, sessizlikte geri çekilme) gateway'de çalışır. Servis yalnızca başlatır/durdurur ve
+`LIVE` / `LIVE_ERR` / `DIAG live` olaylarını yorumlar.
+
+| Durum | Ne zaman | Değer |
+|---|---|---|
+| NoData | başlatıldıktan sonra henüz örnek yok | — |
+| Fresh | son örnek eşikten yeni (varsayılan 3 periyot, en az 1,5 s) | gösterilir |
+| Stale | örnek eski, polling durdu veya bağlantı koptu | gri gösterilir, "güncel" sayılmaz |
+| Unsupported | ECU NRC 0x11/0x12/0x31 verdi; gateway artık sormaz | — |
+| Error | zaman aşımı, TX hatası, diğer NRC | varsa eski değer gri; hata asla değer üretmez |
+
+Bağlantı koparsa tüm Fresh değerler **hemen** Stale olur (zamanlayıcı beklenmez).
+
 ## 5. Neden her şey sinyal?
 
 `send()` bir id döndürür; sonuç her zaman `replyReceived(reply)` sinyaliyle gelir. Bağlantı

@@ -30,10 +30,13 @@ work and are tested. Firmware (Phase 2) builds with ESP-IDF v6.1; not flashed.
 * First ESP32 bench run (2026-11-08, user permission): simulation firmware (build d0636b0e) flashed to the
   ESP32-D0WD-V3 on COM5; protocol verified with an independent Python client and with the C++ desktop path
   (`bench_serial_tests`). TWAI/CAN not exercised (simulation profile).
-* Phase 3c (this checkpoint): `libs/dtc-knowledge` (read-only KnowledgeRepository, schema validation,
+* Phase 3c (`2a70309`): `libs/dtc-knowledge` (read-only KnowledgeRepository, schema validation,
   Unknown DTC fallback), `AuditStore` (sessions + dtc_scans, user_version migrations), `DtcScanService`
   (acquisition / enrichment / audit reported separately), window shows Known/Unknown/unavailable and audit
   status; knowledge DB copied next to the exe. `desktop_data_tests` 18 cases. Docs: `dtc-database.md`.
+* Phase 3d (this checkpoint): `LiveDataService` (per-PID value/unit/timestamps/state, source label,
+  unsupported/error handling, gateway stop reasons, immediate staleness on disconnect) and a live table in
+  the window. `desktop_live_tests` 9 cases. Phase 3 (desktop infrastructure) complete.
 
 ## In progress
 * none
@@ -51,7 +54,7 @@ work and are tested. Firmware (Phase 2) builds with ESP-IDF v6.1; not flashed.
 cmake --preset host-debug && cmake --build --preset host-debug && ctest --preset host-debug
 → 100% passed: core_tests 48, protocol_tests 22, gateway_tests 26; 0 warnings (MinGW 13.1)
 QT_ROOT=C:/Qt/6.11.1/mingw_64; cmake --preset windows-debug && cmake --build --preset windows-debug && ctest --preset windows-debug
-→ 7/7 pass (desktop_tests 11, desktop_serial_tests 7, desktop_data_tests 18; bench skips without ISUZU_BENCH_PORT), 0 warnings
+→ 8/8 pass (desktop 11, serial 7, data 18, live 9; bench skips without ISUZU_BENCH_PORT), 0 warnings
 ISUZU_BENCH_PORT=COM5 bench_serial_tests.exe → pass against the ESP32 (simulation firmware)
 ```
 Firmware (ESP-IDF v6.1, Windows): `idf.py -B build-sim ... sdkconfig.defaults.simulation build` and
@@ -66,13 +69,12 @@ CI workflow written but never run (nothing pushed).
 * Whether to push so CI can verify 6.0.2 and the sanitizer host builds.
 
 ## Next task
-1. W7 rest: `LiveDataService` – per-PID model with value, unit, timestamp and fresh / stale /
-   unsupported / error state (from LIVE / LIVE_ERR events), keep-alive aware; Qt tests over SimulatedEcu
-   scenarios (UNSUPPORTED_VOLTAGE, SILENT back-off).
-2. W8: real screens (dashboard, live data table, DTC list/detail with causes/steps/related live data,
-   history from AuditStore, developer diagnostics, settings / ECU profile).
-3. Bench items still open: physical USB unplug while connected; GUI against COM5 (manual).
-4. CAN hardware path only after the written vehicle-validation plan and explicit permission.
+1. W8 (Phase 4): real screens with QStackedWidget + sidebar (old palette) – connection & vehicle/ECU
+   profile, dashboard, live data (table model over LiveDataService), DTC list + detail (causes, steps,
+   related live data, Known/Unknown, audit status), history from AuditStore, developer diagnostics
+   (filterable bounded events, TRACE toggle, framing counters), settings. Model tests headless.
+2. Bench items still open: physical USB unplug while connected; GUI against COM5 (manual).
+3. CAN hardware path only after the written vehicle-validation plan and explicit permission.
 
 ## Last checkpoint commit
 * see `git log --oneline -1`

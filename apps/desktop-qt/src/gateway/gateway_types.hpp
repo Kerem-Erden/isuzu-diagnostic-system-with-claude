@@ -57,6 +57,7 @@ struct GatewayEvent {
 void copyFields(const proto::Message& message, QStringList& positional, QMap<QString, QString>& values);
 QString toQString(std::string_view text);
 
+Q_DECLARE_METATYPE(diag::Error)
 Q_DECLARE_METATYPE(GatewayIdentity)
 Q_DECLARE_METATYPE(GatewayReply)
 Q_DECLARE_METATYPE(GatewayEvent)

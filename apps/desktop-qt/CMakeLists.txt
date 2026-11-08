@@ -18,7 +18,9 @@ add_library(desktop_core STATIC
     src/data/audit_store.hpp
     src/data/audit_store.cpp
     src/services/dtc_scan_service.hpp
-    src/services/dtc_scan_service.cpp)
+    src/services/dtc_scan_service.cpp
+    src/services/live_data_service.hpp
+    src/services/live_data_service.cpp)
 target_include_directories(desktop_core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)
 target_link_libraries(desktop_core PUBLIC Qt6::Core Qt6::SerialPort Qt6::Sql isuzu::gateway_core isuzu::dtc_knowledge)
 target_compile_features(desktop_core PUBLIC cxx_std_20)
@@ -53,6 +55,7 @@ if(ISUZU_BUILD_TESTS)
     isuzu_add_qt_test(desktop_tests unit/desktop/test_gateway_client.cpp "unit;desktop;simulation")
     isuzu_add_qt_test(desktop_serial_tests unit/desktop/test_serial_transport.cpp "unit;desktop")
     isuzu_add_qt_test(desktop_data_tests unit/desktop/test_data_layer.cpp "unit;desktop;database;simulation")
+    isuzu_add_qt_test(desktop_live_tests unit/desktop/test_live_data.cpp "unit;desktop;simulation")
     # Skips itself unless ISUZU_BENCH_PORT names a COM port with the SIMULATION firmware attached.
     isuzu_add_qt_test(bench_serial_tests hardware/test_serial_bench.cpp "hardware;bench")
 endif()

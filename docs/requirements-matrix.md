@@ -13,7 +13,7 @@ Status values: `planned`, `in-progress`, `implemented (host-tested)`,
 | R-02 | Safe serial port discovery; CP210x handling; unplug never freezes UI | brief §3, old `70ba8cc` | desktop `transport` | Qt Test with fake port, manual unplug | planned |
 | R-03 | Explicit SIMULATION vs VEHICLE source, visible everywhere | brief §3, §13 | protocol `HELLO`, desktop UI | protocol tests, UI model tests | in-progress (HELLO/BOOT source identity done; UI pending) |
 | R-04 | Mode 01 PIDs 0x0C RPM, 0x05 ECT, 0x0D speed, 0x04 load, 0x42 module voltage | brief §11 | `diagnostic-core/obd` | unit tests per PID | implemented (host-tested, core) |
-| R-05 | Per-PID timestamp, fresh/stale/unsupported/error/timeout state | brief §11, §17 | desktop `services`, `ui` | service tests | planned |
+| R-05 | Per-PID timestamp, fresh/stale/unsupported/error/timeout state | brief §11, §17 | desktop `services`, `ui` | service tests | implemented (LiveDataService: value/unit/timestamp, NoData/Fresh/Stale/Unsupported/Error; Qt-tested in simulation) |
 | R-06 | Bounded, configurable polling rate; no aggressive polling, back-off on silence | brief §11, old D10 | firmware `application` | unit tests of scheduler | implemented (host-tested, gateway-core) |
 | R-07 | Mode 03 stored DTC read: zero, one, many | brief §11 | `diagnostic-core/obd` | unit tests | implemented (host-tested, core) |
 | R-08 | ISO-TP SF/FF/FC/CF, sequence check, absolute deadline, buffer bounds | brief §9, §11 | `diagnostic-core/isotp` | unit tests | implemented (host-tested, core) |
