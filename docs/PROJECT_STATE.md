@@ -20,16 +20,21 @@ a skeleton window work and are tested. Firmware (Phase 2) builds with ESP-IDF v6
   ASan/UBSan, IDF 6.0.2 sim/vehicle builds). Docs: `build-and-release.md`, `hardware-wiring.md`,
   firmware guide §7.
 * Phase 2c (`ec5b86f`): firmware build verified with ESP-IDF v6.1 (both profiles, 0 warnings).
-* Phase 3a (this checkpoint): `apps/desktop-qt` – `desktop_core` (Transport, SimulationTransport,
+* Phase 3a (`8e83b4d`): `apps/desktop-qt` – `desktop_core` (Transport, SimulationTransport,
   GatewayClient, value types), skeleton `MainWindow`, 11 Qt Test cases; `Gateway::emit` renamed to
   `sendFrame` (Qt `emit` macro clash); CMake `enable_testing()` order fixed; CI desktop job.
+* Phase 3b (`a06ae99`): `SerialTransport` (QSerialPort on a worker thread, async open, unplug via
+  ResourceError, DTR/RTS low, bounded stop without terminate), port enumeration with CP210x marking,
+  `GatewayClient::setTransport()`, failed-vs-lost connection distinction, port combo in MainWindow,
+  `desktop_serial_tests` (7 hardware-free cases).
 
 ## In progress
 * none
 
 ## Environment facts (2026-11-08)
 * Reference repo: `../isuzu-diagnostic-system` @ `67206fd` (read-only, untouched).
-* Windows: Qt 6.11.1 `mingw_64` (no Qt Serial Port), MinGW 13.1, Ninja, CMake 4.3.1.
+* Windows: Qt 6.11.1 `mingw_64` incl. Serial Port (installed 2026-11-08), MinGW 13.1, Ninja, CMake 4.3.1.
+  COM ports seen: COM1, COM5 (COM5 presumably the ESP32 – never opened by tests).
   ESP-IDF **v6.1** installed by the user (EIM): `C:/esp/v6.1/esp-idf`, activate with
   `. C:/Espressif/tools/Microsoft.v6.1.PowerShell_profile.ps1`. Old v5.5.4 env is broken and unused.
 * User's Linux VM has ESP-IDF (version unconfirmed). Repo not yet transferred to the VM.
@@ -39,7 +44,7 @@ a skeleton window work and are tested. Firmware (Phase 2) builds with ESP-IDF v6
 cmake --preset host-debug && cmake --build --preset host-debug && ctest --preset host-debug
 → 100% passed: core_tests 48, protocol_tests 22, gateway_tests 26; 0 warnings (MinGW 13.1)
 QT_ROOT=C:/Qt/6.11.1/mingw_64; cmake --preset windows-debug && cmake --build --preset windows-debug && ctest --preset windows-debug
-→ 4/4 executables pass (desktop_tests: 11 cases), 0 warnings; app smoke-starts offscreen
+→ 5/5 executables pass (desktop_tests 11, desktop_serial_tests 7 cases), 0 warnings; app smoke-starts offscreen
 ```
 Firmware (ESP-IDF v6.1, Windows): `idf.py -B build-sim ... sdkconfig.defaults.simulation build` and
 `idf.py -B build-vehicle ... sdkconfig.defaults.vehicle build` → both "Project build complete", 0 warnings.
@@ -47,7 +52,6 @@ CI workflow written but never run (nothing pushed).
 
 ## Known blockers
 * RK-09 build verified on IDF v6.1 only; 6.0.2 CI run needs a push (user decision).
-* RK-08 Qt Serial Port missing (desktop serial transport).
 * RK-01 Physical CAN path unproven.
 
 ## Open questions
@@ -59,7 +63,8 @@ CI workflow written but never run (nothing pushed).
    and failure injection.
 2. W7: services (DtcScanService with separate acquisition / enrichment / audit outcomes, LiveDataService
    with fresh/stale/unsupported/error states).
-3. SerialTransport (QSerialPort on a worker thread) as soon as the Qt Serial Port module is installed.
+3. Optional, needs explicit permission: flash the simulation firmware to the ESP32 (COM5?) and connect
+   the desktop over the real COM port – first hardware check of protocol + SerialTransport.
 Flashing remains a separate step requiring explicit user permission.
 
 ## Last checkpoint commit

@@ -10,9 +10,9 @@
 | Qt | 6.x (tested 6.11.1 `mingw_64`) with **Core, Widgets, Sql, Test, SerialPort** | desktop (Phase 3+) |
 | ESP-IDF | **6.0.2**, target `esp32` | firmware (Phase 2+) |
 
-> Local machine status (2026-11-08): Qt Serial Port module and ESP-IDF 6.0.2 are not installed.
-> Install "Qt Serial Port" for 6.11.1 MinGW via `C:\Qt\MaintenanceTool.exe` → *Add or remove
-> components*. Install ESP-IDF 6.0.2 with the Espressif Installation Manager (EIM).
+> Local machine status (2026-11-08): Qt 6.11.1 MinGW incl. Serial Port; ESP-IDF v6.1 (EIM).
+> Qt Serial Port is added via `C:/Qt/MaintenanceTool.exe` → *Add or remove components* →
+> Qt 6.11.1 → Additional Libraries (Qt Creator's "Serial Terminal" extension is NOT the library).
 
 ## Host build (libraries and unit tests, no Qt)
 

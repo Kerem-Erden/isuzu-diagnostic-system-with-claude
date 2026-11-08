@@ -24,7 +24,8 @@ Nothing in this repository is vehicle-validated. Every feature below is at most
 | Firmware runs on an ESP32 | ASSUMED | not flashed |
 | Desktop GatewayClient: HELLO identity, correlation, DTC part merge, NRC, desktop timeout, unplug, async failure when disconnected, noise/unknown id, keep-alive, reboot re-handshake, live events | AUTO + SIM | `ctest --preset windows-debug` → 4/4 (desktop_tests 11 cases pass), Qt 6.11.1 MinGW, 2026-11-08 |
 | Desktop app starts | MANUAL smoke | `isuzu_diagnostic.exe` with `QT_QPA_PLATFORM=offscreen` still running after 3 s; no UI interaction verified |
-| Desktop over a real serial port | ASSUMED | `SerialTransport` not written (Qt Serial Port missing) |
+| SerialTransport without hardware: CP210x id recognition, enumeration, async open failure → closed once, client reports connectionFailed, no-op when closed, safe destruction during open, no transport switch while connected | AUTO | `ctest --preset windows-debug` → 5/5 (desktop_serial_tests 7 cases), 2026-11-08 |
+| Desktop ↔ real ESP32 over COM port (framing, DTR/RTS, unplug) | ASSUMED | not attempted; requires flashing (user permission) |
 | TwaiAdapter listen-only boot, TX slot lifetime, ISR → queue | ASSUMED | design reviewed only; requires ESP32 bench test |
 
 ## Inherited facts from the reference system (not re-verified here)

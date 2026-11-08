@@ -17,7 +17,7 @@ flowchart TB
   UI --> GC
   GC --> TR[transport: Transport arayüzü]
   TR --> SIM[SimulationTransport\ngateway-core + SimulatedEcu]
-  TR --> SER[SerialTransport\nQSerialPort, worker thread - Qt Serial Port gerekli]
+  TR --> SER[SerialTransport\nQSerialPort, worker thread]
 ```
 
 `desktop_core` statik kütüphanesi widget içermez. Bu sayede client ve servisler GUI olmadan
@@ -40,6 +40,21 @@ cevabındaki `source=SIMULATION` alanına bakar (brief §13).
 
 Hata enjeksiyonu: `setLinkMuted()` (ölü hat), `injectToDesktop()` (gürültü / sahte frame),
 `simulateUnplug()` (USB çıkarma), `setScenario()` (ECU davranışı).
+
+## 3b. SerialTransport
+
+* `QSerialPort` yalnızca `SerialWorker` içinde, kendi `QThread`'inde oluşturulur, kullanılır ve
+  silinir. GUI tarafı ona sadece queued çağrılar ve sinyallerle ulaşır.
+* `open()` asenkrondur: başarısız açılış (port meşgul, yok) `errorOccurred` + `closed("open failed: …")`
+  ile bildirilir; `GatewayClient` bunu `connectionFailed` olarak (connectionLost değil) raporlar.
+* USB çıkarma `QSerialPort::ResourceError` ile algılanır → `closed("device removed")`.
+* Açtıktan sonra **DTR ve RTS düşük** yapılır: ESP32 DevKit'te RTS→EN (reset), DTR→GPIO0 (boot).
+  Bazı sürücüler açılışta yine de kısa bir darbe verip kartı resetleyebilir; o zaman gateway
+  `EVT BOOT` gönderir ve client handshake'i tekrarlar.
+* Thread durdurulurken en fazla 2 s beklenir. Sürücüde takılı kalan thread `terminate()` edilmez;
+  bitince kendini siler (bu yüzden `QThread` heap'tedir).
+* Port listesi `QSerialPortInfo` ile alınır; VID 0x10C4 / PID 0xEA60 (CP210x) "ESP32 gateway?"
+  olarak işaretlenir. Listeleme portu açmaz.
 
 ## 4. GatewayClient
 
