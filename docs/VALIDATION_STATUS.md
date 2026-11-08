@@ -11,7 +11,12 @@ Nothing in this repository is vehicle-validated. Every feature below is at most
 
 | Claim | Level | Evidence (command, date) |
 |---|---|---|
-| (filled per phase) | | |
+| ISO-TP SF/FF/FC/CF receive, sequence wrap, BS>0, overflow FC, stale/wrong-responder filtering, absolute + N_Cr timeouts | AUTO | `ctest --preset host-debug` → 48/48 tests pass, MinGW 13.1, Windows 11, 2026-11-08 |
+| Mode 01 decode for 0x04/0x05/0x0C/0x0D/0x42 and supported-PID bitmap | AUTO | same run |
+| Mode 03 decode for 0 / 1 / many DTCs, malformed rejection | AUTO | same run |
+| OBD transaction error stages (enqueue, TX completion, missing completion, RX timeout, NRC, NRC 0x78 with P2* and limit, wrong service, ISO-TP error), no retry | AUTO | same run |
+| Mode 04 codec (simulation-only translation unit) | AUTO | same run |
+| Any of the above against a real ECU | ASSUMED | not attempted |
 
 ## Inherited facts from the reference system (not re-verified here)
 
