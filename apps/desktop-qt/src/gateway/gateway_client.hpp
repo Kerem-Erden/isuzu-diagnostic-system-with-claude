@@ -41,6 +41,9 @@ public:
     /// Opens the transport and sends HELLO. Result: identityReady() or connectionFailed().
     void connectToGateway();
     void disconnectFromGateway();
+    /// Switches the link (e.g. simulation ↔ COM port). Only while Disconnected and the current
+    /// transport is closed. The transport is not owned. @return false if not allowed now.
+    bool setTransport(Transport* transport);
 
     /**
      * @brief Sends one request. @return its id; the outcome arrives as replyReceived(id, …).
@@ -72,6 +75,7 @@ private:
         QStringList dtcParts;  ///< collected DTC_PART fragments (READ_DTC only)
     };
 
+    void attachTransport();
     quint32 sendInternal(const QString& command, const QStringList& args, int timeoutMs);
     void onBytes(const QByteArray& bytes);
     void onBody(std::string_view body);
@@ -90,6 +94,7 @@ private:
     quint32 lastId_ = 0;
     quint32 helloId_ = 0;
     int missedKeepAlives_ = 0;
+    bool failureReported_ = false;
     State state_ = State::Disconnected;
     GatewayIdentity identity_;
     QElapsedTimer clock_;

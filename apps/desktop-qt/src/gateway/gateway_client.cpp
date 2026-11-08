@@ -25,9 +25,21 @@ GatewayClient::GatewayClient(Transport* transport, QObject* parent) : QObject(pa
     connect(&timeoutTimer_, &QTimer::timeout, this, &GatewayClient::checkTimeouts);
     keepAlive_.setInterval(kKeepAliveMs);
     connect(&keepAlive_, &QTimer::timeout, this, [this] { sendInternal(QStringLiteral("PING"), {}, keepAlive_.interval()); });
+    attachTransport();
+}
+
+void GatewayClient::attachTransport() {
     connect(transport_, &Transport::bytesReceived, this, &GatewayClient::onBytes);
     connect(transport_, &Transport::closed, this, &GatewayClient::onTransportClosed);
     connect(transport_, &Transport::errorOccurred, this, &GatewayClient::protocolWarning);
+}
+
+bool GatewayClient::setTransport(Transport* transport) {
+    if (state_ != State::Disconnected || transport == nullptr || transport_->isOpen()) return false;
+    transport_->disconnect(this);
+    transport_ = transport;
+    attachTransport();
+    return true;
 }
 
 void GatewayClient::setState(State state) {
@@ -205,6 +217,7 @@ void GatewayClient::finish(quint32 id, GatewayReply reply) {
             problem = QStringLiteral("data source changed from %1 to %2").arg(previousSource, identity.source);
         // Fail closed: without a verified identity no diagnostic data may be shown.
         if (!problem.isEmpty()) {
+            failureReported_ = true;  // the following close must not report a second failure
             emit connectionFailed(problem);
             disconnectFromGateway();
         } else {
@@ -252,9 +265,14 @@ void GatewayClient::failAll(const diag::Error& error) {
 }
 
 void GatewayClient::onTransportClosed(const QString& reason) {
+    const bool wasReady = state_ == State::Ready;
     timeoutTimer_.stop();
     helloId_ = 0;
     failAll(diag::fail(Stage::SerialTransport, Code::Disconnected));
     setState(State::Disconnected);
-    emit connectionLost(reason);
+    // A link that never became Ready (e.g. COM port busy, asynchronous open failed) is a failed
+    // connection attempt, not a lost connection – the UI shows them differently.
+    if (wasReady) emit connectionLost(reason);
+    else if (!failureReported_) emit connectionFailed(reason);
+    failureReported_ = false;
 }

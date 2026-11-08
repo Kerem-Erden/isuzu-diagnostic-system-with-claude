@@ -1,8 +1,8 @@
 # Masaüstü Rehberi (Qt 6 Widgets)
 
-> Durum (2026-11-08): İskelet hazır. Simülasyon transport'u, `GatewayClient` ve basit bir ana
-> pencere çalışıyor. Gerçek seri port (`QSerialPort`) transport'u, Qt Serial Port modülü
-> kurulunca eklenecek. DTC bilgi veritabanı, audit ve ekranlar sonraki adımlarda gelecek.
+> Durum (2026-11-08): Simülasyon ve seri port transport'ları, `GatewayClient` ve basit bir ana
+> pencere (port seçimi dahil) çalışıyor. Seri transport donanımsız testlerden geçti, ancak gerçek
+> ESP32 ile **henüz denenmedi**. DTC bilgi veritabanı, audit ve ekranlar sonraki adımlarda.
 
 **Okuma sırası:** `src/transport/transport.hpp` → `src/transport/simulation_transport.*` →
 `src/gateway/gateway_types.hpp` → `src/gateway/gateway_client.*` →

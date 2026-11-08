@@ -7,20 +7,26 @@
 #include <QPushButton>
 #include <QVBoxLayout>
 
+#include <QComboBox>
+
 #include "gateway/gateway_client.hpp"
+#include "transport/serial_transport.hpp"
 #include "transport/simulation_transport.hpp"
 
 namespace {
 constexpr int kMaxLogLines = 500;  // bounded: the developer screen must never grow without limit
+const QString kSimulationKey = QStringLiteral("::simulation");  // cannot collide with a COM name
 }
 
 MainWindow::MainWindow(QWidget* parent)
     : QMainWindow(parent),
-      transport_(new SimulationTransport(this)),
-      client_(new GatewayClient(transport_, this)),
+      simulation_(new SimulationTransport(this)),
+      client_(new GatewayClient(simulation_, this)),
+      portCombo_(new QComboBox),
+      refreshButton_(new QPushButton(tr("Refresh ports"))),
       banner_(new QLabel(tr("NOT CONNECTED"))),
       details_(new QLabel),
-      connectButton_(new QPushButton(tr("Connect (simulation)"))),
+      connectButton_(new QPushButton(tr("Connect"))),
       readDtcButton_(new QPushButton(tr("Read DTCs"))),
       liveButton_(new QPushButton(tr("Start live data"))),
       log_(new QListWidget) {
@@ -31,7 +37,12 @@ MainWindow::MainWindow(QWidget* parent)
     banner_->setStyleSheet(QStringLiteral("font-weight:600; padding:8px; background:#E8EAED; color:#30343B;"));
     details_->setStyleSheet(QStringLiteral("color:#68707C;"));
 
+    portCombo_->setMinimumWidth(320);
+    refreshPorts();
+
     auto* buttons = new QHBoxLayout;
+    buttons->addWidget(portCombo_);
+    buttons->addWidget(refreshButton_);
     buttons->addWidget(connectButton_);
     buttons->addWidget(readDtcButton_);
     buttons->addWidget(liveButton_);
@@ -47,8 +58,9 @@ MainWindow::MainWindow(QWidget* parent)
     setCentralWidget(central);
     setConnectedUi(false);
 
+    connect(refreshButton_, &QPushButton::clicked, this, &MainWindow::refreshPorts);
     connect(connectButton_, &QPushButton::clicked, this, [this] {
-        if (client_->state() == GatewayClient::State::Disconnected) client_->connectToGateway();
+        if (client_->state() == GatewayClient::State::Disconnected) connectSelected();
         else client_->disconnectFromGateway();
     });
     connect(readDtcButton_, &QPushButton::clicked, this, [this] { client_->send(QStringLiteral("READ_DTC")); });
@@ -60,12 +72,56 @@ MainWindow::MainWindow(QWidget* parent)
     connect(client_, &GatewayClient::replyReceived, this, &MainWindow::onReply);
     connect(client_, &GatewayClient::eventReceived, this, &MainWindow::onEvent);
     connect(client_, &GatewayClient::connectionLost, this, &MainWindow::onDisconnected);
-    connect(client_, &GatewayClient::connectionFailed, this, [this](const QString& reason) { log(tr("Connection failed: %1").arg(reason)); });
+    connect(client_, &GatewayClient::connectionFailed, this, [this](const QString& reason) {
+        setConnectedUi(false);
+        log(tr("Connection failed: %1").arg(reason));
+    });
     connect(client_, &GatewayClient::protocolWarning, this, [this](const QString& text) { log(tr("Protocol: %1").arg(text)); });
 }
 
+void MainWindow::refreshPorts() {
+    const QString previous = portCombo_->currentData().toString();
+    portCombo_->clear();
+    portCombo_->addItem(tr("Simulation (no vehicle)"), kSimulationKey);
+    for (const SerialPortEntry& port : availableSerialPorts()) {
+        QString label = QStringLiteral("%1 — %2").arg(port.portName, port.description);
+        if (port.likelyGateway) label += tr("  [CP210x – ESP32 gateway?]");
+        portCombo_->addItem(label, port.portName);
+    }
+    const int index = portCombo_->findData(previous);
+    portCombo_->setCurrentIndex(index >= 0 ? index : 0);
+}
+
+void MainWindow::connectSelected() {
+    const QString key = portCombo_->currentData().toString();
+    // Point the client away from the old serial transport before deleting it.
+    if (!client_->setTransport(simulation_)) {
+        log(tr("Cannot switch link while connected"));
+        return;
+    }
+    Transport* transport = simulation_;
+    if (key != kSimulationKey) {
+        // A fresh transport per COM connection: no state survives from a previous device.
+        // Deleting waits ≤ 2 s for a worker thread that might still be inside the driver.
+        delete serial_;
+        serial_ = new SerialTransport(key, this);
+        transport = serial_;
+    }
+    if (!client_->setTransport(transport)) {
+        log(tr("Cannot switch link while connected"));
+        return;
+    }
+    banner_->setText(tr("CONNECTING to %1 …").arg(transport->description()));
+    connectButton_->setText(tr("Cancel"));
+    portCombo_->setEnabled(false);
+    refreshButton_->setEnabled(false);
+    client_->connectToGateway();
+}
+
 void MainWindow::setConnectedUi(bool connected) {
-    connectButton_->setText(connected ? tr("Disconnect") : tr("Connect (simulation)"));
+    connectButton_->setText(connected ? tr("Disconnect") : tr("Connect"));
+    portCombo_->setEnabled(!connected);
+    refreshButton_->setEnabled(!connected);
     readDtcButton_->setEnabled(connected);
     liveButton_->setEnabled(connected);
     if (!connected) {

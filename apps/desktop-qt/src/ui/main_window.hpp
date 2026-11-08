@@ -11,9 +11,11 @@
 #include <QMainWindow>
 
 class GatewayClient;
+class QComboBox;
 class QLabel;
 class QListWidget;
 class QPushButton;
+class SerialTransport;
 class SimulationTransport;
 struct GatewayIdentity;
 struct GatewayReply;
@@ -31,9 +33,14 @@ private:
     void onDisconnected(const QString& reason);
     void log(const QString& text);
     void setConnectedUi(bool connected);
+    void refreshPorts();
+    void connectSelected();
 
-    SimulationTransport* transport_;
+    SimulationTransport* simulation_;
+    SerialTransport* serial_ = nullptr;  ///< recreated for each COM connection
     GatewayClient* client_;
+    QComboBox* portCombo_;
+    QPushButton* refreshButton_;
     QLabel* banner_;
     QLabel* details_;
     QPushButton* connectButton_;
